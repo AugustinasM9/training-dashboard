@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Augustinas — Training</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#E01A22;--red2:#c01218;--red-dim:rgba(224,26,34,.12);
+  --bg:#111114;--bg2:#18181c;--bg3:#1e1e24;--bg4:#252530;
+  --border:#2a2a35;--border2:#333340;
+  --txt:#e8e8f0;--txt2:#9090a0;--txt3:#505060;
+  --green:#22c55e;--yellow:#f59e0b;--blue:#3b82f6;--purple:#8b5cf6;
+  --z1:#3b82f6;--z2:#22c55e;--z3:#f59e0b;--z4:#f97316;--z5:#E01A22;--z6:#8b5cf6;
+}
+body{font-family:'Barlow',sans-serif;font-size:14px;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+/* ── NAV ─────────────────────────────────────────────────────────────── */
+.topbar{display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);height:52px;padding:0 20px;gap:0;position:sticky;top:0;z-index:100}
+.logo{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;color:#fff;letter-spacing:.04em;margin-right:28px;flex-shrink:0}
+.logo span{color:var(--red)}
+.navtabs{display:flex;height:100%;gap:0}
+.navtab{padding:0 18px;font-size:13px;font-weight:600;color:var(--txt3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;letter-spacing:.02em;text-transform:uppercase;user-select:none}
+.navtab.active{color:#fff;border-bottom-color:var(--red)}
+.navtab:hover:not(.active){color:var(--txt2)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--txt3);flex-shrink:0}
+.status-txt{font-size:11px;color:var(--txt3)}
+/* ── PAGES ───────────────────────────────────────────────────────────── */
+.page{display:none;padding:20px 20px 40px}
+.page.active{display:block}
+/* ── BUTTONS ─────────────────────────────────────────────────────────── */
+.btn{background:var(--bg4);border:1px solid var(--border2);color:var(--txt2);padding:5px 12px;border-radius:5px;font-size:12px;cursor:pointer;font-family:'Barlow',sans-serif;font-weight:600;letter-spacing:.03em;transition:all .15s}
+.btn:hover{background:var(--bg3);color:var(--txt);border-color:var(--border2)}
+.btn-red{background:var(--red);border:none;color:#fff;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;letter-spacing:.04em;text-transform:uppercase;transition:background .15s;width:100%}
+.btn-red:hover{background:var(--red2)}
+.btn-red:disabled{background:var(--bg4);color:var(--txt3);cursor:default;border:1px solid var(--border)}
+/* ── LAYOUT ──────────────────────────────────────────────────────────── */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.bgrid{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}
+/* ── CARDS ───────────────────────────────────────────────────────────── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.card-hdr{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+/* ── STAT CARDS ──────────────────────────────────────────────────────── */
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.stat-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;line-height:1;color:#fff}
+.stat-sub{font-size:11px;color:var(--txt3);margin-top:4px;font-weight:500}
+/* ── ACTIVITY ROWS ───────────────────────────────────────────────────── */
+.act-tbl{width:100%;border-collapse:collapse}
+.act-tbl thead th{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.1em;padding:0 8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.act-tbl thead th:not(:first-child){text-align:right}
+.act-tbl tbody tr{border-bottom:1px solid var(--border);cursor:default}
+.act-tbl tbody tr:last-child{border-bottom:none}
+.act-tbl tbody tr:hover{background:var(--bg3)}
+.act-tbl tbody td{padding:9px 8px;font-size:12px;font-weight:500;vertical-align:middle}
+.act-tbl tbody td:not(:first-child):not(:nth-child(2)){text-align:right}
+.act-name{font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px}
+.act-date{color:var(--txt3);font-size:11px;white-space:nowrap}
+.act-type-badge{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.06em}
+/* ── ZONE BADGE ──────────────────────────────────────────────────────── */
+.zb{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle;flex-shrink:0}
+/* ── ZONE BAR ────────────────────────────────────────────────────────── */
+.zone-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;margin-top:2px}
+.zone-seg{height:100%;border-radius:1px;transition:width .4s}
+/* ── WEEK PLANNER DAY CARDS ──────────────────────────────────────────── */
+.dcard{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;transition:border-color .2s}
+.dcard.off{opacity:.38}
+.dcard.has-actual{border-left:3px solid var(--green)}
+.drow{display:flex;align-items:center;gap:10px}
+.dname{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:var(--txt3);width:38px;flex-shrink:0;letter-spacing:.06em}
+.ddate{font-size:11px;color:var(--txt3);width:64px;flex-shrink:0}
+.dsel{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;padding:6px 9px;font-size:12px;color:var(--txt);font-family:'Barlow',sans-serif;font-weight:600;cursor:pointer;outline:none;transition:border-color .15s}
+.dsel:focus{border-color:var(--red)}
+.dsel:disabled{opacity:.4;cursor:default}
+.dinfo{margin-top:8px;padding:8px 10px;background:var(--bg);border-radius:5px;font-size:11px;color:var(--txt2);line-height:1.7;border:1px solid var(--border)}
+.tog{width:36px;height:20px;border-radius:10px;border:none;cursor:pointer;flex-shrink:0;position:relative;background:var(--bg4);transition:background .2s}
+.tog.on{background:var(--red)}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.tog.on::after{transform:translateX(16px)}
+/* ── SEASON BARS ─────────────────────────────────────────────────────── */
+.srow{border-radius:6px;padding:8px 10px;cursor:pointer;transition:background .15s;border:1px solid transparent}
+.srow:hover{background:var(--bg3)}
+.srow.current{background:var(--bg3);border-color:var(--border2)}
+/* ── PUSH LOG ────────────────────────────────────────────────────────── */
+.plog{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-top:10px;font-family:monospace;font-size:11px;line-height:1.8;max-height:200px;overflow-y:auto;display:none}
+.lok{color:var(--green)}.lerr{color:var(--red)}.linf{color:var(--blue)}
+/* ── LOADING ─────────────────────────────────────────────────────────── */
+.spin{display:flex;align-items:center;justify-content:center;gap:8px;padding:28px;color:var(--txt3);font-size:12px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:bounce .7s infinite alternate}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{to{transform:translateY(-6px);opacity:.2}}
+/* ── CHAT ────────────────────────────────────────────────────────────── */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 130px)}
+.chat-msgs{flex:1;overflow-y:auto;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;margin-bottom:10px}
+.msg-user{display:flex;flex-direction:row-reverse;gap:9px;align-items:flex-start}
+.msg-coach{display:flex;gap:9px;align-items:flex-start}
+.msg-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;font-family:'Barlow Condensed',sans-serif}
+.msg-avatar.u{background:var(--red)}
+.msg-avatar.c{background:var(--bg4);border:1px solid var(--border2);color:var(--txt2)}
+.msg-bubble{max-width:82%;border-radius:8px;padding:10px 14px;font-size:13px;line-height:1.65;white-space:pre-wrap}
+.msg-bubble.u{background:var(--red);color:#fff}
+.msg-bubble.c{background:var(--bg3);border:1px solid var(--border);color:var(--txt)}
+.chat-input-row{display:flex;gap:8px}
+.chat-input{flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:7px;padding:11px 15px;font-size:13px;color:var(--txt);font-family:'Barlow',sans-serif;outline:none;transition:border-color .15s}
+.chat-input:focus{border-color:var(--red)}
+.chat-send{background:var(--red);color:#fff;border:none;border-radius:7px;padding:11px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;letter-spacing:.03em;transition:background .15s}
+.chat-send:hover{background:var(--red2)}
+.quick-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+/* ── WEEK SUM ────────────────────────────────────────────────────────── */
+.wsum-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.wsum-row:last-child{border-bottom:none}
+.wsum-lbl{color:var(--txt3);font-weight:500}
+/* ── TSS PROGRESS ────────────────────────────────────────────────────── */
+.tss-bar-wrap{height:6px;background:var(--bg4);border-radius:3px;margin-top:10px;overflow:hidden}
+.tss-bar{height:100%;border-radius:3px;background:var(--red);transition:width .4s}
+/* ── ACTUAL PILL ─────────────────────────────────────────────────────── */
+.actual-pill{margin-top:7px;padding:7px 9px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:5px;font-size:11px}
+/* ── COLORS ──────────────────────────────────────────────────────────── */
+.c-red{color:var(--red)}.c-grn{color:var(--green)}.c-yel{color:var(--yellow)}.c-blu{color:var(--blue)}.c-pur{color:var(--purple)}
+/* ── SECTION HEADER ──────────────────────────────────────────────────── */
+.sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.sec-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#fff;letter-spacing:.04em;text-transform:uppercase}
+canvas{display:block;width:100%!important}
+/* ── DBG ─────────────────────────────────────────────────────────────── */
+#dbg{display:none;position:fixed;top:0;right:0;width:420px;height:100vh;background:var(--bg2);border-left:1px solid var(--border);padding:16px;overflow-y:auto;z-index:999}
+/* ── RESPONSIVE ──────────────────────────────────────────────────────── */
+@media(max-width:900px){.grid4{grid-template-columns:repeat(2,1fr)}.bgrid{grid-template-columns:1fr}}
+@media(max-width:600px){.grid4{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topbar">
+  <div class="logo">TRAIN<span>ER</span></div>
+  <nav class="navtabs">
+    <div class="navtab active" onclick="showTab('dash')">Dashboard</div>
+    <div class="navtab" onclick="showTab('builder')">Workout Builder</div>
+    <div class="navtab" onclick="showTab('chat')">AI Coach</div>
+  </nav>
+  <div class="nav-right">
+    <div class="status-dot" id="sdot"></div>
+    <div class="status-txt" id="lupd">Connecting...</div>
+    <button class="btn" style="margin-left:6px" onclick="loadAll()">Refresh</button>
+    <button class="btn" onclick="runDebug()">Debug</button>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-dash">
+
+  <!-- Training Load Stats -->
+  <div class="grid4">
+    <div class="stat">
+      <div class="stat-lbl">Fitness CTL</div>
+      <div class="stat-val c-blu" id="ctl">--</div>
+      <div class="stat-sub">Chronic Training Load</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Fatigue ATL</div>
+      <div class="stat-val c-red" id="atl">--</div>
+      <div class="stat-sub">Acute Training Load</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Form TSB</div>
+      <div class="stat-val" id="tsb">--</div>
+      <div class="stat-sub">Training Stress Balance</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Week TSS</div>
+      <div class="stat-val c-yel" id="wktss">--</div>
+      <div class="stat-sub" id="wkhrs">--</div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-hdr">CTL / ATL / TSB — 60 days<span id="ctl-tag" style="font-family:'Barlow';font-size:11px;font-weight:500;color:var(--txt3);text-transform:none;letter-spacing:0"></span></div>
+      <div style="height:160px"><canvas id="fitChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">Weekly Training Stress — 16 Weeks</div>
+      <div style="height:160px"><canvas id="wkChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Races countdown -->
+  <div class="grid2" style="margin-bottom:10px">
+    <div class="card" style="display:flex;gap:20px;align-items:center">
+      <div style="flex:1">
+        <div class="stat-lbl" style="margin-bottom:6px">VeloPeak 500 · 80km Road</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:900;color:var(--red);line-height:1" id="vp-days">--</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:3px">July 6, 2026 · days remaining</div>
+      </div>
+      <div style="width:1px;height:60px;background:var(--border)"></div>
+      <div style="flex:1">
+        <div class="stat-lbl" style="margin-bottom:6px">Megre Gravel · 100km</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:900;color:var(--txt2);line-height:1" id="mg-days">--</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:3px">August 1, 2026 · days remaining</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">Power Zones (FTP 337W)</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
+          <div style="width:10px;height:10px;border-radius:2px;background:var(--z1);flex-shrink:0"></div>
+          <span style="color:var(--txt3);width:110px">Z1 Recovery</span>
+          <span style="color:var(--txt2);font-weight:600">&lt;169W</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
+          <div style="width:10px;height:10px;border-radius:2px;background:var(--z2);flex-shrink:0"></div>
+          <span style="color:var(--txt3);width:110px">Z2 Endurance</span>
+          <span style="color:var(--txt2);font-weight:600">169–253W</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
+          <div style="width:10px;height:10px;border-radius:2px;background:var(--z3);flex-shrink:0"></div>
+          <span style="color:var(--txt3);width:110px">Z3 Tempo</span>
+          <span style="color:var(--txt2);font-weight:600">253–303W</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
+          <div style="width:10px;height:10px;border-radius:2px;background:var(--z4);flex-shrink:0"></div>
+          <span style="color:var(--txt3);width:110px">Z4 Sweetspot</span>
+          <span style="color:var(--txt2);font-weight:600">296–320W</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
+          <div style="width:10px;height:10px;border-radius:2px;background:var(--z5);flex-shrink:0"></div>
+          <span style="color:var(--txt3);width:110px">Z5 Threshold</span>
+          <span style="color:var(--txt2);font-weight:600">317–354W</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
+          <div style="width:10px;height:10px;border-radius:2px;background:var(--z6);flex-shrink:0"></div>
+          <span style="color:var(--txt3);width:110px">Z6+ VO2 / Anaerobic</span>
+          <span style="color:var(--txt2);font-weight:600">&gt;354W</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity table -->
+  <div class="card">
+    <div class="card-hdr">
+      Recent Activities
+      <span id="actct" style="font-family:'Barlow';font-size:11px;font-weight:500;color:var(--txt3);text-transform:none;letter-spacing:0"></span>
+    </div>
+    <div id="acts"><div class="spin"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Loading activities...</span></div></div>
+  </div>
+
+</div>
+
+<!-- ══ WORKOUT BUILDER ════════════════════════════════════════════════ -->
+<div class="page" id="page-builder">
+
+  <div class="sec-hdr">
+    <div class="sec-title">Workout Builder</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn" onclick="shiftWeek(-1)">← Prev</button>
+      <span id="wlabel" style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--txt2);min-width:160px;text-align:center;letter-spacing:.04em">--</span>
+      <button class="btn" onclick="shiftWeek(1)">Next →</button>
+    </div>
+  </div>
+
+  <!-- Season overview -->
+  <div class="card" style="margin-bottom:14px" id="season-overview">
+    <div style="text-align:center;color:var(--txt3);font-size:12px;padding:10px">Loading season plan...</div>
+  </div>
+
+  <div class="bgrid">
+    <div id="dcards"></div>
+
+    <!-- Sidebar summary -->
+    <div style="position:sticky;top:70px">
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-hdr">Week Summary</div>
+        <div class="wsum-row"><span class="wsum-lbl">Sessions</span><span id="sum-s" style="font-weight:700">0</span></div>
+        <div class="wsum-row"><span class="wsum-lbl">Estimated TSS</span><span id="sum-t" style="font-weight:700;color:var(--yellow)">0</span></div>
+        <div class="wsum-row"><span class="wsum-lbl">Est. Hours</span><span id="sum-h" style="font-weight:700">0h</span></div>
+        <div class="wsum-row"><span class="wsum-lbl">Focus</span><span id="sum-f" style="font-weight:700;color:var(--red)">--</span></div>
+        <div class="tss-bar-wrap"><div id="tbar" class="tss-bar" style="width:0%"></div></div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:4px;text-align:right">Target: 280–360 TSS</div>
+      </div>
+
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-hdr">Coach Note</div>
+        <div id="bnote" style="font-size:12px;color:var(--txt2);line-height:1.7">Select sessions to see advice.</div>
+      </div>
+
+      <button class="btn-red" id="pbtn" onclick="pushWorkouts()">Push to Intervals.icu</button>
+      <div style="font-size:10px;color:var(--txt3);text-align:center;margin-top:5px">Syncs to Garmin automatically</div>
+      <div id="plog" class="plog"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ AI COACH ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-chat">
+  <div class="sec-hdr" style="margin-bottom:12px">
+    <div class="sec-title">AI Coach</div>
+    <span style="font-size:12px;color:var(--txt3)">Context from intervals.icu included automatically</span>
+  </div>
+
+  <div class="chat-wrap">
+    <div class="quick-btns">
+      <button class="btn" onclick="quickQ('What should I focus on today based on my training load?')">Today's focus</button>
+      <button class="btn" onclick="quickQ('Analyse my current week training load and intensity distribution')">Week analysis</button>
+      <button class="btn" onclick="quickQ('Am I on track for VeloPeak 500 on July 6?')">Race readiness</button>
+      <button class="btn" onclick="quickQ('What are my biggest training gaps right now?')">Training gaps</button>
+      <button class="btn" onclick="quickQ('Design a sweetspot session for me to do today')">Build session</button>
+      <button class="btn" onclick="quickQ('How can I improve my Zone 2 aerobic base?')">Zone 2 tips</button>
+    </div>
+
+    <div class="chat-msgs" id="chat-msgs">
+      <div style="text-align:center;color:var(--txt3);font-size:12px;padding:30px">
+        Ask your coach anything. Your training data is loaded automatically.
+      </div>
+    </div>
+
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-input" type="text" placeholder="Ask your coach..."
+        onkeydown="if(event.key==='Enter')sendChat()"
+        onfocus="this.style.borderColor='var(--red)'"
+        onblur="this.style.borderColor='var(--border2)'">
+      <button class="chat-send" onclick="sendChat()">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- DBG PANEL -->
+<div id="dbg">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <span style="color:var(--red);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em">RAW API DATA</span>
+    <button class="btn" onclick="document.getElementById('dbg').style.display='none'">Close</button>
+  </div>
+  <div id="dbg-content" style="font-family:monospace;font-size:10px;color:var(--txt3);line-height:1.8"></div>
+</div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────────────
+const FTP=337,API='/api';
+const Z2LO=Math.round(FTP*.56),Z2HI=Math.round(FTP*.75);
+const SSLO=Math.round(FTP*.88),SSHI=Math.round(FTP*.93);
+const THLO=Math.round(FTP*.94),THHI=Math.round(FTP*1.05);
+const RECOV=Math.round(FTP*.50);
+
+let charts={},aCache=null;
+
+// ── UTILS ──────────────────────────────────────────────────────────────
+async function api(method,path,body){
+  const opts={method,headers:{'Content-Type':'application/json',Accept:'application/json'}};
+  if(body)opts.body=JSON.stringify(body);
+  const r=await fetch(API+path,opts);
+  const d=await r.json().catch(()=>({}));
+  return{ok:r.ok,status:r.status,data:d};
+}
+function daysAgo(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+function fd(s){return new Date(s).toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
+function fiso(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function fdur(s){if(!s)return'--';const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?`${h}h ${m}m`:`${m}m`;}
+function zcol(p){return p>=105?'var(--z6)':p>=94?'var(--z5)':p>=88?'var(--z4)':p>=76?'var(--z3)':p>=56?'var(--z2)':'var(--z1)';}
+function ifColor(p){return p>=105?'#8b5cf6':p>=94?'#E01A22':p>=88?'#f97316':p>=76?'#f59e0b':p>=56?'#22c55e':'#3b82f6';}
+
+function mkChart(id,type,labels,datasets,o={}){
+  if(charts[id])charts[id].destroy();
+  const ctx=document.getElementById(id);if(!ctx)return;
+  charts[id]=new Chart(ctx,{type,data:{labels,datasets},options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:o.legend??false,tooltip:{backgroundColor:'#1e1e24',titleColor:'#9090a0',bodyColor:'#e8e8f0',borderColor:'#2a2a35',borderWidth:1,mode:'index',intersect:false}},
+    scales:{
+      x:{grid:{display:false},ticks:{font:{family:'Barlow',size:10},color:'#505060',maxTicksLimit:o.maxX??10}},
+      y:{grid:{color:'#1e1e24'},ticks:{font:{family:'Barlow',size:10},color:'#505060',callback:o.ycb},min:o.ymin},
+      ...(o.y2?{y2:{position:'right',grid:{display:false},ticks:{font:{size:10},color:'#22c55e'},min:-30,max:30}}:{})
+    }
+  }});
+}
+
+// ── RACE COUNTDOWN ─────────────────────────────────────────────────────
+function updateCountdowns(){
+  const vp=Math.ceil((new Date('2026-07-06')-new Date())/86400000);
+  const mg=Math.ceil((new Date('2026-08-01')-new Date())/86400000);
+  document.getElementById('vp-days').textContent=vp>0?vp:'Race Day!';
+  document.getElementById('mg-days').textContent=mg>0?mg:'Race Day!';
+}
+
+// ── ACTIVITIES ─────────────────────────────────────────────────────────
+async function loadActivities(){
+  const res=await api('GET',`/activities?oldest=${daysAgo(112)}&newest=${daysAgo(0)}`);
+  if(!res.ok||!Array.isArray(res.data)){
+    document.getElementById('acts').innerHTML=`<div style="padding:20px;color:var(--txt3);font-size:12px;text-align:center">No activity data (${res.status||'error'}) — check server connection</div>`;
+    return null;
+  }
+  aCache=res.data;
+  const data=res.data;
+  document.getElementById('actct').textContent=data.length+' activities · 16 weeks';
+
+  // Week TSS + hours
+  const mon=new Date();mon.setDate(mon.getDate()-((mon.getDay()+6)%7));mon.setHours(0,0,0,0);
+  let wts=0,whs=0;
+  data.forEach(a=>{if(new Date(a.start_date_local)>=mon){wts+=a.icu_training_load??0;whs+=a.moving_time??0;}});
+  document.getElementById('wktss').textContent=Math.round(wts)||'0';
+  document.getElementById('wkhrs').textContent=(whs/3600).toFixed(1)+'h this week';
+
+  // CTL/ATL/TSB fallback from activities if wellness didn't provide them
+  if(document.getElementById('ctl').textContent==='--'){
+    const f=[...data].reverse().find(a=>a.icu_ctl!=null);
+    if(f) setFitness(Math.round(f.icu_ctl),Math.round(f.icu_atl??0),Math.round(f.icu_form??0));
+  }
+
+  // Build activity table
+  let html=`<table class="act-tbl"><thead><tr>
+    <th>Activity</th>
+    <th>Type</th>
+    <th>Duration</th>
+    <th>TSS</th>
+    <th>NP</th>
+    <th>IF%</th>
+    <th>Avg W</th>
+    <th>Avg HR</th>
+    <th>Cadence</th>
+  </tr></thead><tbody>`;
+
+  data.slice(0,18).forEach(a=>{
+    const np=Math.round(a.icu_weighted_avg_watts??0);
+    const avgW=Math.round(a.average_watts??0);
+    const ifp=np?Math.round(np/FTP*100):0;
+    const tss=Math.round(a.icu_training_load??0);
+    const hr=Math.round(a.average_heartrate??0);
+    const cad=Math.round(a.average_cadence??0);
+    const col=np?ifColor(ifp):'var(--txt3)';
+    const isRide=['Ride','VirtualRide','GravelRide','MountainBikeRide'].includes(a.type);
+    const typeLbl=a.type==='VirtualRide'?'VIRTUAL':isRide?'RIDE':a.type==='WeightTraining'?'GYM':(a.type||'RIDE').toUpperCase().slice(0,8);
+    const typeBg=isRide?'rgba(224,26,34,.15)':a.type==='WeightTraining'?'rgba(139,92,246,.15)':'rgba(59,130,246,.15)';
+    const typeCol=isRide?'var(--red)':a.type==='WeightTraining'?'var(--purple)':'var(--blue)';
+    html+=`<tr>
+      <td><div class="act-name">${a.name||'Activity'}</div><div class="act-date">${fd(a.start_date_local)}</div></td>
+      <td><span class="act-type-badge" style="background:${typeBg};color:${typeCol}">${typeLbl}</span></td>
+      <td style="color:var(--txt2)">${fdur(a.moving_time)}</td>
+      <td style="font-weight:700;color:${tss>150?'var(--red)':tss>80?'var(--yellow)':'var(--txt)'}">${tss||'--'}</td>
+      <td style="color:${col};font-weight:700">${np?np+'W':'--'}</td>
+      <td style="color:${col};font-weight:700">${ifp?ifp+'%':'--'}</td>
+      <td style="color:var(--txt2)">${avgW?avgW+'W':'--'}</td>
+      <td style="color:${hr>170?'var(--red)':hr>155?'var(--yellow)':hr>0?'var(--txt2)':'var(--txt3)'}">${hr?hr+'bpm':'--'}</td>
+      <td style="color:${cad>=88&&cad<=97?'var(--green)':cad>0?'var(--yellow)':'var(--txt3)'}">${cad?cad+'rpm':'--'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('acts').innerHTML=html;
+
+  // Weekly TSS chart
+  const wm={};
+  data.forEach(a=>{
+    const dt=new Date(a.start_date_local);
+    const off=(dt.getDay()+6)%7;
+    const wk=new Date(dt);wk.setDate(dt.getDate()-off);wk.setHours(0,0,0,0);
+    const k=wk.toISOString().slice(0,10);
+    wm[k]=(wm[k]??0)+(a.icu_training_load??0);
+  });
+  const wks=Object.keys(wm).sort().slice(-16),wv=wks.map(w=>Math.round(wm[w]));
+  mkChart('wkChart','bar',wks.map(w=>fd(w)),[{
+    label:'TSS',data:wv,
+    backgroundColor:wv.map(v=>v>400?'rgba(224,26,34,.85)':v>260?'rgba(245,158,11,.75)':v>10?'rgba(224,26,34,.5)':'rgba(224,26,34,.15)'),
+    borderRadius:4
+  }],{maxX:16});
+
+  return data;
+}
+
+// ── WELLNESS — CTL/ATL/TSB + fitness chart ─────────────────────────────
+function setFitness(ctl,atl,tsb){
+  if(ctl) document.getElementById('ctl').textContent=ctl;
+  if(atl) document.getElementById('atl').textContent=atl;
+  const el=document.getElementById('tsb');
+  el.textContent=(tsb>=0?'+':'')+tsb;
+  el.className='stat-val '+(tsb>5?'c-grn':tsb<-10?'c-red':'c-yel');
+}
+
+async function loadWellness(){
+  const res=await api('GET',`/wellness?oldest=${daysAgo(62)}&newest=${daysAgo(0)}`);
+  if(!res.ok||!Array.isArray(res.data)||!res.data.length)return null;
+
+  const data=[...res.data].sort((a,b)=>a.id<b.id?-1:1); // oldest first
+  const rev=[...data].reverse();                          // newest first
+
+  // CTL/ATL/TSB from most recent entry that has them
+  const fitE=rev.find(d=>d.ctl!=null||d.atl!=null);
+  if(fitE){
+    setFitness(Math.round(fitE.ctl??0), Math.round(fitE.atl??0), Math.round(fitE.form??0));
+  }
+
+  // Fitness chart — always draw from wellness (most accurate source)
+  const sl=data.slice(-60);
+  const hasChartData=sl.some(d=>d.ctl||d.atl);
+  if(hasChartData){
+    mkChart('fitChart','line',sl.map(d=>fd(d.id)),[
+      {label:'CTL',data:sl.map(d=>Math.round(d.ctl??0)),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.06)',fill:true,tension:0.35,borderWidth:2,pointRadius:0},
+      {label:'ATL',data:sl.map(d=>Math.round(d.atl??0)),borderColor:'#E01A22',backgroundColor:'transparent',fill:false,tension:0.35,borderWidth:2,pointRadius:0},
+      {label:'TSB',data:sl.map(d=>Math.round(d.form??0)),borderColor:'#22c55e',backgroundColor:'transparent',fill:false,tension:0.35,borderWidth:1.5,pointRadius:0,borderDash:[4,4],yAxisID:'y2'}
+    ],{legend:{display:true,labels:{font:{family:'Barlow',size:10},color:'#505060',boxWidth:12}},y2:true});
+  }
+
+  return data;
+}
+
+function showApiError(msg){
+  document.getElementById('sdot').style.background='#E01A22';
+  document.getElementById('lupd').textContent=msg;
+  ['ctl','atl','tsb','wktss'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.textContent==='--') el.style.opacity='.25';
+  });
+  document.getElementById('acts').innerHTML=`
+    <div style="padding:28px;text-align:center">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--red);letter-spacing:.06em;margin-bottom:8px">SERVER NOT REACHABLE</div>
+      <div style="font-size:13px;color:var(--txt2);line-height:1.8">
+        This file must be served through <strong style="color:#fff">server.py</strong>, not opened directly.<br>
+        Run: <code style="background:var(--bg4);padding:2px 8px;border-radius:4px;color:var(--green)">python3 server.py</code><br>
+        Then open: <code style="background:var(--bg4);padding:2px 8px;border-radius:4px;color:var(--blue)">http://localhost:8080</code>
+      </div>
+    </div>`;
+}
+
+async function loadAll(){
+  // Detect file:// — server proxy won't work
+  if(location.protocol==='file:'){
+    showApiError('Open via localhost:8080');
+    updateCountdowns();
+    return;
+  }
+
+  document.getElementById('sdot').style.background='#f59e0b';
+  document.getElementById('lupd').textContent='Connecting...';
+  document.getElementById('acts').innerHTML='<div class="spin"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Loading...</span></div>';
+  updateCountdowns();
+
+  try{
+    const [w,a] = await Promise.all([
+      loadWellness().catch(e=>{console.error('Wellness:',e);return null;}),
+      loadActivities().catch(e=>{console.error('Activities:',e);return null;})
+    ]);
+    buildSeasonOverview();
+
+    if(!w && !a){
+      showApiError('API error — is server.py running?');
+      return;
+    }
+    ['ctl','atl','tsb','wktss'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.style.opacity='1';
+    });
+    document.getElementById('sdot').style.background='#22c55e';
+    document.getElementById('lupd').textContent='Updated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){
+    showApiError('Error — '+e.message);
+    console.error(e);
+  }
+}
+
+// ── SESSION LIBRARY ────────────────────────────────────────────────────
+const SESS={
+  rest:{label:'Rest Day',color:'#505060',bg:'transparent',tss:0,mins:0,type:'Rest',desc:'Complete rest.',doc:null},
+  z2_90:{label:'Zone 2 — 1.5h',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:50,mins:90,type:'Ride',desc:`Easy ${Z2LO}–${Z2HI}W. HR 130–148bpm. Cadence 88–95rpm.`,doc:`WARMUP 10min: Start 160W, build to ${Z2LO}W.\n\nMAIN 70min: Hold ${Z2LO}–${Z2HI}W. HR 130–148bpm. Hills: stand and soft pedal.\n\nCOOLDOWN 10min: Drop to 160W.`},
+  z2_120:{label:'Zone 2 — 2h',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:68,mins:120,type:'Ride',desc:`Aerobic base. ${Z2LO}–${Z2HI}W. HR 130–148bpm.`,doc:`WARMUP 12min: Start 155W, build slowly to ${Z2LO}W.\n\nMAIN 96min: Hold ${Z2LO}–${Z2HI}W. HR 130–148bpm. Hills: stand and soft pedal.\n\nCOOLDOWN 12min: Drop to 160W.`},
+  tempo_3x15:{label:'Tempo — 3×15min',color:'#f59e0b',bg:'rgba(245,158,11,.1)',tss:82,mins:90,type:'Ride',desc:`3×15min at ${Math.round(FTP*.78)}–${Math.round(FTP*.85)}W. Breathing hard. Attacks Tempo weakness.`,doc:`WARMUP 15min: 160W build to ${Math.round(FTP*.75)}W. Last 2min: 2×20sec at ${SSLO}W.\n\nBLOCK 1 - 15min: ${Math.round(FTP*.78)}–${Math.round(FTP*.85)}W\n\nRECOVERY 5min: ${RECOV}W\n\nBLOCK 2 - 15min: Same target.\n\nRECOVERY 5min: ${RECOV}W\n\nBLOCK 3 - 15min: Push harder if feeling good.\n\nCOOLDOWN 10min: 160W.`},
+  ss_3x15:{label:'Sweetspot — 3×15min',color:'#f97316',bg:'rgba(249,115,22,.1)',tss:80,mins:85,type:'Ride',desc:`3×15min at ${SSLO}–${SSHI}W. Building sweetspot base. Cadence 90–95rpm.`,doc:`WARMUP 12min: 160W build to ${Math.round(FTP*.75)}W. Last 2min: 2×20sec at ${SSLO}W.\n\nBLOCK 1 - 15min: ${SSLO}–${SSHI}W. Cadence 90–95rpm.\n\nRECOVERY 4min: ${RECOV}W\n\nBLOCK 2 - 15min: Same target.\n\nRECOVERY 4min: ${RECOV}W\n\nBLOCK 3 - 15min: Push to ${SSHI}W in last 5min if strong.\n\nCOOLDOWN 10min.`},
+  ss_2x20:{label:'Sweetspot 2×20min — KEY',color:'#f97316',bg:'rgba(249,115,22,.14)',tss:90,mins:80,type:'Ride',desc:`KEY SESSION. 2×20min at ${SSLO}–${SSHI}W. Cadence 90–95rpm. Primary race fitness driver.`,doc:`WARMUP 15min: 160W to 200W to 240W to 270W. Last 3min: 3×30sec at ${SSLO}W.\n\nINTERVAL 1 - 20min: ${SSLO}–${SSHI}W. Settle by min 3. HR 158–165bpm by min 10.\n\nRECOVERY 5min: ${RECOV}W.\n\nINTERVAL 2 - 20min: Start ${SSLO}W. Last 5min push to ${SSHI}W if strong.\n\nCOOLDOWN 10min: 160W.`},
+  long_z2:{label:'Long — Zone 2 3h',color:'#3b82f6',bg:'rgba(59,130,246,.1)',tss:115,mins:180,type:'Ride',desc:`Pure aerobic. ${Z2LO}–${Math.round(FTP*.70)}W all ride. HR under 148bpm.`,doc:`WARMUP 15min: 155W build to ${Z2LO}W.\n\nMAIN 150min: ${Z2LO}–${Math.round(FTP*.70)}W. HR 130–148bpm.\n\nCOOLDOWN 15min: 160W.`},
+  long_ss:{label:'Long + Sweetspot Blocks',color:'#3b82f6',bg:'rgba(59,130,246,.1)',tss:132,mins:210,type:'Ride',desc:`60min Z2, 2×15min sweetspot, 45min Z2. VeloPeak simulation.`,doc:`WARMUP 15min: 155W build to ${Z2LO}W.\n\nZ2 PHASE 1 - 45min: ${Z2LO}–${Z2HI}W.\n\nSS BLOCK 1 - 15min: ${SSLO}–${Math.round(FTP*.91)}W. Sweetspot on tired legs.\n\nRECOVERY 5min: ${RECOV}W\n\nSS BLOCK 2 - 15min: Same target. Stand if back tightens.\n\nZ2 FINISH - 45min: ${Z2LO}–${Z2HI}W.`},
+  threshold_2x12:{label:'Threshold — 2×12min',color:'#E01A22',bg:'rgba(224,26,34,.1)',tss:88,mins:70,type:'Ride',desc:`HARD. 2×12min at ${THLO}–${THHI}W. Weeks 5–6 only.`,doc:`WARMUP 15min: 160W to ${Math.round(FTP*.80)}W. Last 5min: 3×1min at ${THLO}W.\n\nINTERVAL 1 - 12min: ${THLO}–${THHI}W. HR will hit 170–180bpm.\n\nRECOVERY 8min: 185W.\n\nINTERVAL 2 - 12min: Same. Last 2min push everything.\n\nCOOLDOWN 10min: 160W.`},
+  gym_cycling:{label:'Gym — Cycling Specific',color:'#8b5cf6',bg:'rgba(139,92,246,.1)',tss:30,mins:50,type:'WeightTraining',desc:'50min. Single leg, glutes, core. No heavy bilateral squats until after Megre Aug 1.',doc:'WARMUP 5min: Hip circles, leg swings, bodyweight squats x10.\n\nMAIN 2-3 rounds:\nBulgarian Split Squat: 3x10 each leg.\nSingle Leg Press: 3x12 each leg.\nRomanian Deadlift: 3x10 at 60-70%.\nHip Thrust: 3x15.\nCopenhagen Plank: 3x20sec each side.\n\nCORE: Dead Bug 3x10 / Single Leg Glute Bridge 3x15 / Bird Dog 3x10\n\nMOBILITY: Hip flexor 2min each side / Hamstring 90sec each side'}
+};
+
+const DAYS=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+let weekOff=0;
+let weekActuals={};
+let DS={MON:{on:true,s:'ss_3x15'},TUE:{on:true,s:'z2_120'},WED:{on:false,s:'rest'},THU:{on:true,s:'ss_2x20'},FRI:{on:true,s:'long_ss'},SAT:{on:false,s:'rest'},SUN:{on:true,s:'z2_90'}};
+
+function getWeekDates(){
+  const t=new Date(),off=(t.getDay()+6)%7,mon=new Date(t);
+  mon.setDate(t.getDate()-off+(weekOff+1)*7);
+  return DAYS.map((_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});
+}
+
+async function loadWeekActuals(dates){
+  const oldest=fiso(dates[0]),newest=fiso(dates[6]);
+  const res=await api('GET',`/activities?oldest=${oldest}&newest=${newest}`).catch(()=>null);
+  weekActuals={};
+  if(!res||!res.ok||!Array.isArray(res.data))return;
+  res.data.forEach(a=>{const d=a.start_date_local?.slice(0,10);if(d){if(!weekActuals[d])weekActuals[d]=[];weekActuals[d].push(a);}});
+}
+
+async function buildCards(){
+  const dates=getWeekDates();
+  document.getElementById('wlabel').textContent=`${fd(dates[0])} — ${fd(dates[6])}`;
+  await loadWeekActuals(dates);
+  const opts=Object.entries(SESS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+  document.getElementById('dcards').innerHTML=DAYS.map((day,i)=>{
+    const st=DS[day],s=SESS[st.s];
+    const dateStr=fiso(dates[i]);
+    const actuals=weekActuals[dateStr]||[];
+
+    let actualHtml='';
+    actuals.forEach(a=>{
+      const np=Math.round(a.icu_weighted_avg_watts??0);
+      const tss=Math.round(a.icu_training_load??0);
+      const hr=Math.round(a.average_heartrate??0);
+      const cad=Math.round(a.average_cadence??0);
+      const ifp=np?Math.round(np/FTP*100):0;
+      const dur=fdur(a.moving_time);
+      actualHtml+=`<div class="actual-pill">
+        <span style="color:var(--green);font-weight:700;font-size:11px">✓ DONE — ${a.name||'Ride'}</span><br>
+        <span style="color:var(--txt2);font-size:11px">${tss} TSS${np?' · '+np+'W NP ('+ifp+'%)':''} · ${hr?hr+'bpm':''} · ${cad?cad+'rpm':''} · ${dur}</span>
+      </div>`;
+    });
+
+    const info=st.on&&st.s!=='rest'?`<div class="dinfo"><span style="color:${s.color};font-weight:700">${s.tss} TSS · ${s.mins}min</span><br><span style="color:var(--txt3)">${s.desc}</span></div>`:'';
+    const hasDone=actuals.length>0;
+    return`<div class="dcard ${st.on?'':'off'} ${hasDone?'has-actual':''}">
+      <div class="drow">
+        <button class="tog ${st.on?'on':''}" onclick="togDay('${day}')"></button>
+        <span class="dname">${day}</span>
+        <span class="ddate">${fd(dates[i])}</span>
+        <select class="dsel" onchange="setS('${day}',this.value)" ${!st.on?'disabled':''}>
+          ${opts.replace(`value="${st.s}"`,`value="${st.s}" selected`)}
+        </select>
+      </div>
+      ${info}${actualHtml}
+    </div>`;
+  }).join('');
+  updateSum();
+  buildSeasonOverview();
+}
+
+function togDay(day){DS[day].on=!DS[day].on;if(!DS[day].on)DS[day].s='rest';buildCards();}
+function setS(day,val){DS[day].s=val;DS[day].on=val!=='rest';buildCards();}
+
+function updateSum(){
+  let tss=0,mins=0,sess=0;const zc={};
+  DAYS.forEach(d=>{const st=DS[d];if(!st.on||st.s==='rest')return;const s=SESS[st.s];if(!s)return;tss+=s.tss;mins+=s.mins;sess++;const z=st.s.split('_')[0];zc[z]=(zc[z]||0)+1;});
+  const pct=Math.min(100,Math.round(tss/360*100));
+  const col=tss>420?'var(--red)':tss>280?'var(--yellow)':'var(--green)';
+  document.getElementById('sum-s').textContent=sess;
+  document.getElementById('sum-t').textContent=tss;
+  document.getElementById('sum-h').textContent=(mins/60).toFixed(1)+'h';
+  document.getElementById('tbar').style.width=pct+'%';
+  document.getElementById('tbar').style.background=col;
+  const zm={ss:'Sweetspot',z2:'Zone 2',tempo:'Tempo',threshold:'Threshold',long:'Endurance',gym:'Gym'};
+  const top=Object.entries(zc).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('sum-f').textContent=top?(zm[top[0]]||top[0]):'--';
+  const n=[];
+  if(tss>420)n.push('High load — monitor daily. Consider dropping a session.');
+  else if(tss<200)n.push('Low load — consider adding a session.');
+  else n.push('Good load balance for the week.');
+  if(DAYS.some(d=>DS[d].on&&DS[d].s.includes('ss')))n.push('Sweetspot present — primary adaptation driver.');
+  if(DAYS.filter(d=>!DS[d].on||DS[d].s==='rest').length<2)n.push('Less than 2 rest days — overreaching risk.');
+  n.push(`VeloPeak ${Math.ceil((new Date('2026-07-06')-new Date())/86400000)}d — Megre ${Math.ceil((new Date('2026-08-01')-new Date())/86400000)}d.`);
+  document.getElementById('bnote').innerHTML=n.join('<br>');
+}
+
+function shiftWeek(d){weekOff+=d;buildCards();}
+
+// ── SEASON OVERVIEW ────────────────────────────────────────────────────
+const PLAN_TSS=[180,280,320,360,330,400,220,120];
+const PLAN_PHASE=['Recovery','Tempo Build','Sweetspot','SS Peak','Threshold','Peak Load','Taper','Race Week'];
+
+function getWeekStart(offsetFromMonday){
+  const t=new Date();const off=(t.getDay()+6)%7;const mon=new Date(t);
+  mon.setDate(t.getDate()-off+offsetFromMonday*7);mon.setHours(0,0,0,0);return mon;
+}
+
+function buildSeasonOverview(){
+  if(!aCache)return;
+  const wm={};
+  aCache.forEach(a=>{
+    const dt=new Date(a.start_date_local);const off=(dt.getDay()+6)%7;
+    const wk=new Date(dt);wk.setDate(dt.getDate()-off);wk.setHours(0,0,0,0);
+    const k=wk.toISOString().slice(0,10);wm[k]=(wm[k]??0)+(a.icu_training_load??0);
+  });
+  const raceDate=new Date('2026-07-06');
+  const today=new Date();
+  const daysToRace=Math.ceil((raceDate-today)/86400000);
+  const weeksToRace=Math.ceil(daysToRace/7);
+
+  let html=`<div class="card-hdr">8-Week Season Plan — VeloPeak in ${daysToRace} days</div>`;
+  html+='<div style="display:flex;flex-direction:column;gap:5px">';
+
+  for(let w=0;w<8;w++){
+    const weekOffset=w-(8-weeksToRace);
+    const wkStart=getWeekStart(weekOffset);
+    const wkKey=wk=>wk.toISOString().slice(0,10);
+    const actualTss=Math.round(wm[wkKey(wkStart)]??0);
+    const plannedTss=PLAN_TSS[w];
+    const phase=PLAN_PHASE[w];
+    const isPast=wkStart<new Date(today.toDateString());
+    const isCurrent=Math.abs(weekOffset)===0;
+    const pct=Math.min(100,Math.round((isPast||isCurrent?actualTss:plannedTss)/420*100));
+    const barColor=isPast?(actualTss>plannedTss*1.2?'var(--red)':actualTss>0?'var(--green)':'var(--border)'):isCurrent?'var(--red)':'rgba(224,26,34,.3)';
+    const label=isPast?`${actualTss} TSS`:isCurrent?`${actualTss} / ${plannedTss} TSS`:`${plannedTss} TSS planned`;
+    const bg=isCurrent?'var(--bg3)':'transparent';
+    const border=isCurrent?'var(--border2)':'transparent';
+    html+=`<div class="srow ${isCurrent?'current':''}" onclick="weekOff=${weekOffset};buildCards()">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:${isCurrent?'#fff':'var(--txt3)'};text-transform:uppercase;letter-spacing:.06em">${phase}</span>
+        <span style="font-size:11px;color:${barColor};font-weight:600">${label}</span>
+      </div>
+      <div style="height:4px;background:var(--bg4);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px;transition:width .4s"></div>
+      </div>
+    </div>`;
+  }
+  html+='</div>';
+  document.getElementById('season-overview').innerHTML=html;
+}
+
+// ── PUSH WORKOUTS ──────────────────────────────────────────────────────
+function cleanStr(s){return(s||'').replace(/\u00d7/g,'x').replace(/[\u2013\u2014]/g,'-').replace(/\u2192/g,'->').replace(/[^\x00-\x7F\n]/g,'').replace(/[^\S\n]+/g,' ').trim();}
+
+async function pushWorkouts(){
+  const btn=document.getElementById('pbtn'),log=document.getElementById('plog');
+  log.innerHTML='';log.style.display='block';btn.disabled=true;btn.textContent='Pushing...';
+  const dates=getWeekDates();let pushed=0,failed=0;
+  alog('Connecting...','linf');
+  const auth=await api('GET','').catch(()=>({ok:false}));
+  if(!auth.ok){alog('Connection failed. Is server running?','lerr');btn.disabled=false;btn.textContent='Push to Intervals.icu';return;}
+  alog('Connected.','lok');
+  for(let i=0;i<DAYS.length;i++){
+    const day=DAYS[i],st=DS[day];
+    if(!st.on||st.s==='rest')continue;
+    const s=SESS[st.s];if(!s||s.tss===0)continue;
+    const name=cleanStr(s.label);
+    const desc=cleanStr(s.desc)+(s.doc?'\n\nSTEPS:\n'+cleanStr(s.doc):'');
+    const payload={category:'WORKOUT',name,description:desc,type:s.type||'Ride',start_date_local:fiso(dates[i])+'T09:00:00',moving_time:s.mins*60,load_target:s.tss};
+    alog(`Pushing ${day} ${fd(dates[i])} — ${name}...`,'linf');
+    const res=await api('POST','/events',payload);
+    if(res.ok){alog(`  Created (ID: ${res.data?.id||'?'})`,'lok');pushed++;}
+    else{alog(`  Failed (${res.status}): ${JSON.stringify(res.data).slice(0,100)}`,'lerr');failed++;}
+  }
+  alog('---','linf');alog(`Done: ${pushed} pushed, ${failed} failed`,pushed>0?'lok':'lerr');
+  if(pushed>0)alog('Open intervals.icu to see your calendar.','lok');
+  btn.disabled=false;btn.textContent=pushed>0?`${pushed} workouts pushed!`:'Push to Intervals.icu';
+  setTimeout(()=>{btn.textContent='Push to Intervals.icu';},5000);
+}
+function alog(msg,cls){const el=document.getElementById('plog');el.style.display='block';el.innerHTML+=`<div class="${cls}">${msg}</div>`;el.scrollTop=el.scrollHeight;}
+
+// ── TAB NAV ────────────────────────────────────────────────────────────
+function showTab(tab){
+  document.querySelectorAll('.navtab').forEach((t,i)=>t.classList.toggle('active',['dash','builder','chat'][i]===tab));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+}
+
+// ── DEBUG ──────────────────────────────────────────────────────────────
+async function runDebug(){
+  const el=document.getElementById('dbg-content');
+  document.getElementById('dbg').style.display='block';
+  el.innerHTML='<span style="color:var(--blue)">Fetching raw API data...</span><br>';
+  try{
+    const r=await api('GET',`/activities?oldest=${daysAgo(7)}&newest=${daysAgo(0)}`);
+    el.innerHTML+='<br><span style="color:var(--green)">ACTIVITIES: '+r.status+' ('+( Array.isArray(r.data)?r.data.length:0)+' items)</span><br>';
+    if(r.data&&r.data.length){
+      const a=r.data[0];el.innerHTML+='<span style="color:#888">Latest:</span><br>';
+      Object.entries(a).filter(([k,v])=>v!=null&&v!==0&&v!=='').forEach(([k,v])=>{el.innerHTML+=`<span style="color:var(--yellow)">${k}</span>: <span style="color:var(--txt)">${JSON.stringify(v)}</span><br>`;});
+    }
+  }catch(e){el.innerHTML+='<span style="color:var(--red)">ERROR: '+e.message+'</span><br>';}
+}
+
+// ── AI COACH ───────────────────────────────────────────────────────────
+let chatHistory=[];
+
+function buildContext(){
+  const ctl=document.getElementById('ctl')?.textContent||'--';
+  const atl=document.getElementById('atl')?.textContent||'--';
+  const tsb=document.getElementById('tsb')?.textContent||'--';
+  const wktss=document.getElementById('wktss')?.textContent||'--';
+  const vp=Math.ceil((new Date('2026-07-06')-new Date())/86400000);
+  const mg=Math.ceil((new Date('2026-08-01')-new Date())/86400000);
+  const DAYS_ALL=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const weekPlan=DAYS_ALL.map(d=>{
+    if(typeof DS==='undefined')return'';
+    const st=DS[d];if(!st||!st.on||st.s==='rest')return`${d}: Rest`;
+    const s=SESS[st.s];return s?`${d}: ${s.label} (${s.tss} TSS, ${s.mins}min)`:`${d}: ${st.s}`;
+  }).join(', ');
+
+  return`You are an AI cycling coach for Augustinas Matusevičius. Be direct, specific, data-driven. Concise and actionable.
+
+ATHLETE PROFILE:
+- Age: 24, Height: 187cm, Weight: ~98kg, Target: 90kg
+- Background: 6-year national team rower (2016-2021), peak lactate 19mmol/l, 200kg squat
+- FTP: 337W | Z2: ${Z2LO}-${Z2HI}W | Sweetspot: ${SSLO}-${SSHI}W | Threshold: ${THLO}-${THHI}W
+- Max HR: 192bpm | Trains outdoors only, 5x/week | Physiotherapist by profession
+- Bikes: Trek Madone SLR 6 (primary), FOCUS CAYO, Giant Revolt (gravel)
+
+TRAINING STATUS:
+- Fitness CTL: ${ctl} | Fatigue ATL: ${atl} | Form TSB: ${tsb}
+- This week TSS: ${wktss}
+
+TARGET RACES:
+- VeloPeak 500 (80km road): ${vp} days away (July 6, 2026)
+- Megre Gravel (100km): ${mg} days away (August 1, 2026)
+- Terrain: Rolling Lithuanian roads, hills max 2-3min
+
+CURRENT WEEK PLAN:
+${weekPlan}
+
+TRAINING GAPS:
+- Tempo: 1.8/10 (weakest — needs most work)
+- Sweetspot: 3.0/10
+- VO2Max: 4.3/10 (strongest — rowing background)
+- Aerobic decoupling: 5.9% (target under 5%)
+- Optimal cadence: 88-95rpm (currently riding too slow)
+
+KNOWN ISSUES:
+- Lower back erector soreness after 2h+ hard rides (muscular, not structural)
+- Tends to ride too hard on easy days
+- FTP may be slightly higher than 337W — proper test needed
+
+Respond in a direct coaching tone. Use watt targets. Be practical.`;
+}
+
+function addMessage(role,text){
+  const msgs=document.getElementById('chat-msgs');
+  const isUser=role==='user';
+  const div=document.createElement('div');
+  div.className=isUser?'msg-user':'msg-coach';
+  div.innerHTML=`
+    <div class="msg-avatar ${isUser?'u':'c'}">${isUser?'A':'C'}</div>
+    <div class="msg-bubble ${isUser?'u':'c'}">${text}</div>`;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+
+function addTyping(){
+  const msgs=document.getElementById('chat-msgs');
+  const div=document.createElement('div');div.id='typing';div.className='msg-coach';
+  div.innerHTML=`
+    <div class="msg-avatar c">C</div>
+    <div class="msg-bubble c" style="padding:12px 16px">
+      <div style="display:flex;gap:5px;align-items:center">
+        <div class="dot" style="width:7px;height:7px;background:var(--red)"></div>
+        <div class="dot" style="width:7px;height:7px;background:var(--red)"></div>
+        <div class="dot" style="width:7px;height:7px;background:var(--red)"></div>
+      </div>
+    </div>`;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+
+function quickQ(q){document.getElementById('chat-input').value=q;sendChat();}
+
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const msg=input.value.trim();if(!msg)return;
+  input.value='';addMessage('user',msg);
+  chatHistory.push({role:'user',content:msg});addTyping();
+  try{
+    const res=await fetch('/claude',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:buildContext(),messages:chatHistory})
+    });
+    document.getElementById('typing')?.remove();
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      addMessage('coach','Error '+(res.status)+': '+(err.error?.message||'Check server logs.'));
+      return;
+    }
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||'No response.';
+    addMessage('coach',reply);chatHistory.push({role:'assistant',content:reply});
+    if(chatHistory.length>20)chatHistory=chatHistory.slice(-20);
+  }catch(e){
+    document.getElementById('typing')?.remove();
+    addMessage('coach','Network error: '+e.message);
+  }
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────
+buildCards();
+loadAll();
+</script>
+</body>
+</html>
