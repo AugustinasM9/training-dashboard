@@ -103,7 +103,7 @@ if __name__ == '__main__':
     if not os.path.exists(HTML_PATH):
         print(f'ERROR: dashboard.html not found in {SCRIPT_DIR}')
         sys.exit(1)
-server = http.server.HTTPServer(('0.0.0.0', PORT), Handler)
+    server = http.server.HTTPServer(('0.0.0.0', PORT), Handler)
     print(f'Dashboard running at http://localhost:{PORT}  |  Ctrl+C to stop')
     try:
         server.serve_forever()
