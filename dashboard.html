@@ -857,8 +857,7 @@ async function sendChat(){
     const res=await fetch('/claude',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:buildContext(),messages:chatHistory})
-    });
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,system:buildContext(),messages:chatHistory})
     document.getElementById('typing')?.remove();
     if(!res.ok){
       const err=await res.json().catch(()=>({}));
