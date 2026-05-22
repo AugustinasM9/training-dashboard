@@ -649,20 +649,85 @@ function buildCareerPage(){
     return;
   }
   
-  console.log('Building Career page with',aCache.length,'activities');
-  
-  // Calculate athlete levels
+  // Athlete levels — calculate from TSS/IF (works without power meter)
   const levels=calculateAthleteLevels();
-  console.log('Athlete levels:',levels);
+  const levelLabels=['Endurance','Tempo','Sweet Spot','Threshold','VO2 Max','Anaerobic'];
+  const levelKeys=['endurance','tempo','sweetspot','threshold','vo2','anaerobic'];
+  const levelColors=['#3b82f6','#f59e0b','#f97316','#E01A22','#8b5cf6','#E01A22'];
   
-  // Check if we have any power data
-  const powerRides=aCache.filter(a=>a.average_watts>0);
-  console.log('Power rides:',powerRides.length);
+  let levelsHtml='';
+  levelKeys.forEach((key,i)=>{
+    const val=levels?levels[key]||0:0;
+    levelsHtml+=`<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
+      <div style="width:110px;font-size:13px;color:var(--txt3);font-weight:600">${levelLabels[i]}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#fff;width:48px">${val.toFixed(1)}</div>
+      <div style="flex:1;height:12px;background:var(--bg4);border-radius:6px;overflow:hidden">
+        <div style="height:100%;width:${val*10}%;background:${levelColors[i]};border-radius:6px;transition:width .8s"></div>
+      </div>
+      <div style="width:28px;text-align:right;font-size:11px;color:var(--txt3)">10</div>
+    </div>`;
+  });
+  document.getElementById('athlete-levels').innerHTML=levelsHtml;
   
-  if(!powerRides.length){
-    document.getElementById('athlete-levels').innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No power data found — athlete levels require rides with power meter data</div>';
-    return;
+  // Weekly averages (last 16 weeks)
+  const cut16=new Date();cut16.setDate(cut16.getDate()-112);
+  const recent=aCache.filter(a=>new Date(a.start_date_local)>=cut16&&(a.icu_training_load||0)>0);
+  const totalTSS=recent.reduce((s,a)=>s+(a.icu_training_load||0),0);
+  const totalHrs=recent.reduce((s,a)=>s+(a.moving_time||0),0)/3600;
+  const uniqueDays=new Set(recent.map(a=>a.start_date_local?.slice(0,10))).size;
+  document.getElementById('car-avg-tss').textContent=Math.round(totalTSS/16)||'--';
+  document.getElementById('car-avg-hrs').textContent=(totalHrs/16).toFixed(1)+'h';
+  document.getElementById('car-avg-days').textContent=(uniqueDays/16).toFixed(1);
+  
+  // Form trend chart (90 days) — use icu_ctl/atl from activities
+  const cut90=new Date();cut90.setDate(cut90.getDate()-90);
+  const form90=aCache.filter(a=>new Date(a.start_date_local)>=cut90&&(a.icu_ctl||0)>0);
+  if(form90.length>3){
+    mkChart('careerFormChart','line',form90.map(a=>fd(a.start_date_local)),[
+      {label:'CTL',data:form90.map(a=>Math.round(a.icu_ctl||0)),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.06)',fill:true,tension:0.35,borderWidth:2,pointRadius:0},
+      {label:'ATL',data:form90.map(a=>Math.round(a.icu_atl||0)),borderColor:'#E01A22',backgroundColor:'transparent',tension:0.35,borderWidth:2,pointRadius:0}
+    ],{legend:{display:false},maxX:12});
   }
+  
+  // Zone distribution — use IF derived from TSS for all rides
+  const cut12=new Date();cut12.setDate(cut12.getDate()-84);
+  const rides12=aCache.filter(a=>new Date(a.start_date_local)>=cut12&&(a.icu_training_load||0)>0&&(a.moving_time||0)>600&&['Ride','VirtualRide','GravelRide','MountainBikeRide'].includes(a.type));
+  const zHrs={z1:0,z2:0,z3:0,z4:0,z5:0,z6:0};
+  rides12.forEach(a=>{
+    const np=a.icu_weighted_avg_watts||a.average_watts||0;
+    const dur=a.moving_time;
+    let pct=np>0?Math.round(np/FTP*100):0;
+    if(!pct&&(a.icu_training_load||0)>0&&dur>0){
+      const IF=Math.sqrt((a.icu_training_load)/(dur/3600*100));
+      pct=Math.round(IF*100);
+    }
+    if(!pct)pct=60;// default to Z2 if no data
+    const hrs=dur/3600;
+    if(pct>=110)zHrs.z6+=hrs;
+    else if(pct>=94)zHrs.z5+=hrs;
+    else if(pct>=88)zHrs.z4+=hrs;
+    else if(pct>=76)zHrs.z3+=hrs;
+    else if(pct>=56)zHrs.z2+=hrs;
+    else zHrs.z1+=hrs;
+  });
+  mkChart('careerZoneChart','bar',['Z1 Recovery','Z2 Endurance','Z3 Tempo','Z4 SS','Z5 Thresh','Z6 VO2'],[{
+    label:'Hours',
+    data:[zHrs.z1,zHrs.z2,zHrs.z3,zHrs.z4,zHrs.z5,zHrs.z6].map(h=>Math.round(h*10)/10),
+    backgroundColor:['#3b82f6','#22c55e','#f59e0b','#f97316','#E01A22','#8b5cf6'],
+    borderRadius:4
+  }],{legend:{display:false}});
+  
+  // Training plan week
+  const raceDate=new Date('2026-07-06');
+  const weeksToRace=Math.ceil((raceDate-new Date())/86400000/7);
+  const weekNum=Math.max(1,Math.min(12,13-weeksToRace));
+  document.getElementById('car-plan-week').textContent=weekNum;
+  document.getElementById('car-plan-progress').style.width=(weekNum/12*100)+'%';
+  
+  // Countdowns
+  document.getElementById('car-vp-days').textContent=Math.ceil((new Date('2026-07-06')-new Date())/86400000);
+  document.getElementById('car-mg-days').textContent=Math.ceil((new Date('2026-08-01')-new Date())/86400000);
+}
   
   // Build athlete levels bars
   const levelLabels=['Endurance','Tempo','Sweet Spot','Threshold','VO2 Max','Anaerobic'];
