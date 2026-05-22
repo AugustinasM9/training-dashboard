@@ -149,6 +149,7 @@ canvas{display:block;width:100%!important}
     <div class="status-txt" id="lupd">Connecting...</div>
     <button class="btn" style="margin-left:6px" onclick="loadAll()">Refresh</button>
     <button class="btn" onclick="runDebug()">Debug</button>
+    <button class="btn" style="margin-left:4px;color:#E01A22;border-color:#E01A22" onclick="logout()">Sign Out</button>
   </div>
 </div>
 
@@ -463,11 +464,19 @@ let charts={},aCache=null;
 
 // ── UTILS ──────────────────────────────────────────────────────────────
 async function api(method,path,body){
-  const opts={method,headers:{'Content-Type':'application/json',Accept:'application/json'}};
+  const token=localStorage.getItem('dash_token')||'';
+  const opts={method,headers:{'Content-Type':'application/json',Accept:'application/json','X-Dash-Token':token}};
   if(body)opts.body=JSON.stringify(body);
   const r=await fetch(API+path,opts);
+  if(r.status===401){localStorage.removeItem('dash_token');location.reload();return{ok:false,status:401,data:{}};}
   const d=await r.json().catch(()=>({}));
   return{ok:r.ok,status:r.status,data:d};
+}
+async function logout(){
+  const token=localStorage.getItem('dash_token')||'';
+  await fetch('/logout',{method:'POST',headers:{'X-Dash-Token':token}});
+  localStorage.removeItem('dash_token');
+  location.reload();
 }
 function daysAgo(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
 function fd(s){return new Date(s).toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
@@ -1813,7 +1822,7 @@ async function sendChat(){
   try{
     const res=await fetch('/claude',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','X-Dash-Token':localStorage.getItem('dash_token')||''},
       body:JSON.stringify({
         model:'claude-haiku-4-5-20251001',
         max_tokens:1500,
