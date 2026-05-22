@@ -566,59 +566,103 @@ async function loadActivities(){
 function calculateAthleteLevels(){
   if(!aCache||!aCache.length)return null;
   
-  // Analyze last 12 weeks of rides with power data
+  // Use last 12 weeks, any ride with TSS data (no power meter required)
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-84);
-  const rides=aCache.filter(a=>new Date(a.start_date_local)>=cutoff&&a.average_watts&&a.moving_time>600);
+  const rides=aCache.filter(a=>{
+    const isRide=['Ride','VirtualRide','GravelRide','MountainBikeRide','EBikeRide'].includes(a.type);
+    const hasData=(a.icu_training_load||0)>0&&(a.moving_time||0)>600;
+    return isRide&&hasData&&new Date(a.start_date_local)>=cutoff;
+  });
   
   if(!rides.length)return{endurance:0,tempo:0,sweetspot:0,threshold:0,vo2:0,anaerobic:0};
   
-  // Calculate time in each zone (seconds)
-  const zones={z1:0,z2:0,z3:0,z4:0,z5:0,z6:0};
+  // Use IF (Intensity Factor) to classify each ride — works with or without power meter
+  // IF = NP/FTP; if no NP use TSS formula to back-calculate IF: IF = sqrt(TSS/(duration_hours*100))
+  const timeByZone={z1:0,z2:0,z3:0,z4:0,z5:0,z6:0};
   let totalTime=0;
   
   rides.forEach(a=>{
-    const np=a.icu_weighted_avg_watts||a.average_watts;
     const dur=a.moving_time;
-    const pct=Math.round(np/FTP*100);
     totalTime+=dur;
     
-    if(pct>=105)zones.z6+=dur;
-    else if(pct>=94)zones.z5+=dur;
-    else if(pct>=88)zones.z4+=dur;
-    else if(pct>=76)zones.z3+=dur;
-    else if(pct>=56)zones.z2+=dur;
-    else zones.z1+=dur;
+    // Get IF: prefer NP-based, fallback to TSS-derived
+    let IF=0;
+    const np=a.icu_weighted_avg_watts||a.average_watts||0;
+    if(np>0){
+      IF=np/FTP;
+    }else if((a.icu_training_load||0)>0&&dur>0){
+      // Reverse TSS = (dur_sec/3600) * IF^2 * 100 => IF = sqrt(TSS/(hrs*100))
+      const hrs=dur/3600;
+      IF=Math.sqrt((a.icu_training_load)/(hrs*100));
+    }
+    
+    if(IF<=0||IF>2)IF=0.6; // fallback to easy
+    const pct=IF*100;
+    
+    // Classify the ride into primary zone (with partial bleed into adjacent zones)
+    if(pct>=110)timeByZone.z6+=dur;
+    else if(pct>=94)timeByZone.z5+=dur;
+    else if(pct>=88)timeByZone.z4+=dur;
+    else if(pct>=76)timeByZone.z3+=dur;
+    else if(pct>=56)timeByZone.z2+=dur;
+    else timeByZone.z1+=dur;
   });
   
-  // Convert to percentages and map to 0-10 scale
-  const pct={
-    z1:zones.z1/totalTime*100,
-    z2:zones.z2/totalTime*100,
-    z3:zones.z3/totalTime*100,
-    z4:zones.z4/totalTime*100,
-    z5:zones.z5/totalTime*100,
-    z6:zones.z6/totalTime*100
+  if(!totalTime)return{endurance:0,tempo:0,sweetspot:0,threshold:0,vo2:0,anaerobic:0};
+  
+  // Convert to hours for scoring
+  const hrs={
+    z1:timeByZone.z1/3600,
+    z2:timeByZone.z2/3600,
+    z3:timeByZone.z3/3600,
+    z4:timeByZone.z4/3600,
+    z5:timeByZone.z5/3600,
+    z6:timeByZone.z6/3600
   };
   
-  // Scoring logic: more time in zone = higher score, capped at 10
+  const totalHrs=totalTime/3600;
+  
+  // Score 0-10: based on hours AND percentage of total time
+  // Endurance = Z2 training, maxed at ~4h/week sustained
+  const endurance=Math.min(10,Math.round((hrs.z2/totalHrs*100/3.5)*10)/10+Math.min(4,hrs.z2/4)*2);
+  const tempo    =Math.min(10,Math.round((hrs.z3/totalHrs*100/2)*10)/10+Math.min(3,hrs.z3/3)*2);
+  const sweetspot=Math.min(10,Math.round((hrs.z4/totalHrs*100/2)*10)/10+Math.min(3,hrs.z4/3)*2);
+  const threshold=Math.min(10,Math.round((hrs.z5/totalHrs*100/1.5)*10)/10+Math.min(2,hrs.z5/2)*2);
+  const vo2      =Math.min(10,Math.round((hrs.z6/totalHrs*100/1)*10)/10+Math.min(1.5,hrs.z6/1.5)*2);
+  const anaerobic=Math.min(10,Math.round(((hrs.z5+hrs.z6)/totalHrs*100/2)*10)/10);
+  
+  console.log('Zone hours:',hrs,'Total:',totalHrs.toFixed(1),'h');
+  
   return{
-    endurance:Math.min(10,Math.round(pct.z2/4)), // Z2 time → Endurance
-    tempo:Math.min(10,Math.round(pct.z3/2.5)),   // Z3 time → Tempo
-    sweetspot:Math.min(10,Math.round(pct.z4/2)), // Z4 time → Sweet Spot
-    threshold:Math.min(10,Math.round(pct.z5/1.5)), // Z5 time → Threshold
-    vo2:Math.min(10,Math.round(pct.z6/1.2)),     // Z6 time → VO2 Max
-    anaerobic:Math.min(10,Math.round((pct.z5+pct.z6)/2)) // Z5+Z6 → Anaerobic
+    endurance:Math.max(0,parseFloat(endurance.toFixed(1))),
+    tempo:Math.max(0,parseFloat(tempo.toFixed(1))),
+    sweetspot:Math.max(0,parseFloat(sweetspot.toFixed(1))),
+    threshold:Math.max(0,parseFloat(threshold.toFixed(1))),
+    vo2:Math.max(0,parseFloat(vo2.toFixed(1))),
+    anaerobic:Math.max(0,parseFloat(anaerobic.toFixed(1)))
   };
 }
 
 function buildCareerPage(){
   if(!aCache||!aCache.length){
-    document.getElementById('athlete-levels').innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No data yet — activities will appear after first sync</div>';
+    document.getElementById('athlete-levels').innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No data yet — refresh to load activities</div>';
     return;
   }
   
+  console.log('Building Career page with',aCache.length,'activities');
+  
   // Calculate athlete levels
   const levels=calculateAthleteLevels();
+  console.log('Athlete levels:',levels);
+  
+  // Check if we have any power data
+  const powerRides=aCache.filter(a=>a.average_watts>0);
+  console.log('Power rides:',powerRides.length);
+  
+  if(!powerRides.length){
+    document.getElementById('athlete-levels').innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No power data found — athlete levels require rides with power meter data</div>';
+    return;
+  }
   
   // Build athlete levels bars
   const levelLabels=['Endurance','Tempo','Sweet Spot','Threshold','VO2 Max','Anaerobic'];
@@ -767,7 +811,7 @@ async function loadAll(){
       loadActivities().catch(e=>{console.error('Activities:',e);return null;})
     ]);
     buildSeasonOverview();
-    buildCareerPage();
+    if(a)buildCareerPage(); // Only build if activities loaded
 
     if(!w && !a){
       showApiError('API error — is server.py running?');
