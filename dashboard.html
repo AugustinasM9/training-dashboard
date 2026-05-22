@@ -355,6 +355,7 @@ canvas{display:block;width:100%!important}
       <button class="btn" onclick="shiftWeek(-1)">← Prev</button>
       <span id="wlabel" style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--txt2);min-width:160px;text-align:center;letter-spacing:.04em">--</span>
       <button class="btn" onclick="shiftWeek(1)">Next →</button>
+      <button class="btn" style="margin-left:8px;background:var(--red);color:#fff;border:none" onclick="openLibrary()">+ Browse Library</button>
     </div>
   </div>
 
@@ -365,8 +366,6 @@ canvas{display:block;width:100%!important}
 
   <div class="bgrid">
     <div id="dcards"></div>
-
-    <!-- Sidebar summary -->
     <div style="position:sticky;top:70px">
       <div class="card" style="margin-bottom:10px">
         <div class="card-hdr">Week Summary</div>
@@ -377,16 +376,30 @@ canvas{display:block;width:100%!important}
         <div class="tss-bar-wrap"><div id="tbar" class="tss-bar" style="width:0%"></div></div>
         <div style="font-size:10px;color:var(--txt3);margin-top:4px;text-align:right">Target: 280–360 TSS</div>
       </div>
-
       <div class="card" style="margin-bottom:10px">
         <div class="card-hdr">Coach Note</div>
         <div id="bnote" style="font-size:12px;color:var(--txt2);line-height:1.7">Select sessions to see advice.</div>
       </div>
-
-      <button class="btn-red" id="pbtn" onclick="pushWorkouts()">Push to Intervals.icu</button>
-      <div style="font-size:10px;color:var(--txt3);text-align:center;margin-top:5px">Syncs to Garmin automatically</div>
       <div id="plog" class="plog"></div>
     </div>
+  </div>
+</div>
+
+<!-- ══ WORKOUT LIBRARY MODAL ══════════════════════════════════════════ -->
+<div id="lib-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;overflow-y:auto">
+  <div style="max-width:700px;margin:40px auto;padding:0 16px 60px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:#fff;letter-spacing:.06em">WORKOUT LIBRARY</div>
+      <button onclick="closeLibrary()" style="background:var(--bg4);border:1px solid var(--border2);color:var(--txt2);padding:6px 14px;border-radius:5px;cursor:pointer;font-family:'Barlow',sans-serif;font-size:13px">✕ Close</button>
+    </div>
+    <div id="lib-content"></div>
+  </div>
+</div>
+
+<!-- ══ SESSION DETAIL MODAL ═══════════════════════════════════════════ -->
+<div id="det-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;overflow-y:auto">
+  <div style="max-width:600px;margin:30px auto;padding:0 16px 60px">
+    <div id="det-content"></div>
   </div>
 </div>
 
@@ -804,16 +817,123 @@ async function loadAll(){
 
 // ── SESSION LIBRARY ────────────────────────────────────────────────────
 const SESS={
-  rest:{label:'Rest Day',color:'#505060',bg:'transparent',tss:0,mins:0,type:'Rest',desc:'Complete rest.',doc:null},
-  z2_90:{label:'Zone 2 — 1.5h',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:50,mins:90,type:'Ride',desc:`Easy ${Z2LO}–${Z2HI}W. HR 130–148bpm. Cadence 88–95rpm.`,doc:`WARMUP 10min: Start 160W, build to ${Z2LO}W.\n\nMAIN 70min: Hold ${Z2LO}–${Z2HI}W. HR 130–148bpm. Hills: stand and soft pedal.\n\nCOOLDOWN 10min: Drop to 160W.`},
-  z2_120:{label:'Zone 2 — 2h',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:68,mins:120,type:'Ride',desc:`Aerobic base. ${Z2LO}–${Z2HI}W. HR 130–148bpm.`,doc:`WARMUP 12min: Start 155W, build slowly to ${Z2LO}W.\n\nMAIN 96min: Hold ${Z2LO}–${Z2HI}W. HR 130–148bpm. Hills: stand and soft pedal.\n\nCOOLDOWN 12min: Drop to 160W.`},
-  tempo_3x15:{label:'Tempo — 3×15min',color:'#f59e0b',bg:'rgba(245,158,11,.1)',tss:82,mins:90,type:'Ride',desc:`3×15min at ${Math.round(FTP*.78)}–${Math.round(FTP*.85)}W. Breathing hard. Attacks Tempo weakness.`,doc:`WARMUP 15min: 160W build to ${Math.round(FTP*.75)}W. Last 2min: 2×20sec at ${SSLO}W.\n\nBLOCK 1 - 15min: ${Math.round(FTP*.78)}–${Math.round(FTP*.85)}W\n\nRECOVERY 5min: ${RECOV}W\n\nBLOCK 2 - 15min: Same target.\n\nRECOVERY 5min: ${RECOV}W\n\nBLOCK 3 - 15min: Push harder if feeling good.\n\nCOOLDOWN 10min: 160W.`},
-  ss_3x15:{label:'Sweetspot — 3×15min',color:'#f97316',bg:'rgba(249,115,22,.1)',tss:80,mins:85,type:'Ride',desc:`3×15min at ${SSLO}–${SSHI}W. Building sweetspot base. Cadence 90–95rpm.`,doc:`WARMUP 12min: 160W build to ${Math.round(FTP*.75)}W. Last 2min: 2×20sec at ${SSLO}W.\n\nBLOCK 1 - 15min: ${SSLO}–${SSHI}W. Cadence 90–95rpm.\n\nRECOVERY 4min: ${RECOV}W\n\nBLOCK 2 - 15min: Same target.\n\nRECOVERY 4min: ${RECOV}W\n\nBLOCK 3 - 15min: Push to ${SSHI}W in last 5min if strong.\n\nCOOLDOWN 10min.`},
-  ss_2x20:{label:'Sweetspot 2×20min — KEY',color:'#f97316',bg:'rgba(249,115,22,.14)',tss:90,mins:80,type:'Ride',desc:`KEY SESSION. 2×20min at ${SSLO}–${SSHI}W. Cadence 90–95rpm. Primary race fitness driver.`,doc:`WARMUP 15min: 160W to 200W to 240W to 270W. Last 3min: 3×30sec at ${SSLO}W.\n\nINTERVAL 1 - 20min: ${SSLO}–${SSHI}W. Settle by min 3. HR 158–165bpm by min 10.\n\nRECOVERY 5min: ${RECOV}W.\n\nINTERVAL 2 - 20min: Start ${SSLO}W. Last 5min push to ${SSHI}W if strong.\n\nCOOLDOWN 10min: 160W.`},
-  long_z2:{label:'Long — Zone 2 3h',color:'#3b82f6',bg:'rgba(59,130,246,.1)',tss:115,mins:180,type:'Ride',desc:`Pure aerobic. ${Z2LO}–${Math.round(FTP*.70)}W all ride. HR under 148bpm.`,doc:`WARMUP 15min: 155W build to ${Z2LO}W.\n\nMAIN 150min: ${Z2LO}–${Math.round(FTP*.70)}W. HR 130–148bpm.\n\nCOOLDOWN 15min: 160W.`},
-  long_ss:{label:'Long + Sweetspot Blocks',color:'#3b82f6',bg:'rgba(59,130,246,.1)',tss:132,mins:210,type:'Ride',desc:`60min Z2, 2×15min sweetspot, 45min Z2. VeloPeak simulation.`,doc:`WARMUP 15min: 155W build to ${Z2LO}W.\n\nZ2 PHASE 1 - 45min: ${Z2LO}–${Z2HI}W.\n\nSS BLOCK 1 - 15min: ${SSLO}–${Math.round(FTP*.91)}W. Sweetspot on tired legs.\n\nRECOVERY 5min: ${RECOV}W\n\nSS BLOCK 2 - 15min: Same target. Stand if back tightens.\n\nZ2 FINISH - 45min: ${Z2LO}–${Z2HI}W.`},
-  threshold_2x12:{label:'Threshold — 2×12min',color:'#E01A22',bg:'rgba(224,26,34,.1)',tss:88,mins:70,type:'Ride',desc:`HARD. 2×12min at ${THLO}–${THHI}W. Weeks 5–6 only.`,doc:`WARMUP 15min: 160W to ${Math.round(FTP*.80)}W. Last 5min: 3×1min at ${THLO}W.\n\nINTERVAL 1 - 12min: ${THLO}–${THHI}W. HR will hit 170–180bpm.\n\nRECOVERY 8min: 185W.\n\nINTERVAL 2 - 12min: Same. Last 2min push everything.\n\nCOOLDOWN 10min: 160W.`},
-  gym_cycling:{label:'Gym — Cycling Specific',color:'#8b5cf6',bg:'rgba(139,92,246,.1)',tss:30,mins:50,type:'WeightTraining',desc:'50min. Single leg, glutes, core. No heavy bilateral squats until after Megre Aug 1.',doc:'WARMUP 5min: Hip circles, leg swings, bodyweight squats x10.\n\nMAIN 2-3 rounds:\nBulgarian Split Squat: 3x10 each leg.\nSingle Leg Press: 3x12 each leg.\nRomanian Deadlift: 3x10 at 60-70%.\nHip Thrust: 3x15.\nCopenhagen Plank: 3x20sec each side.\n\nCORE: Dead Bug 3x10 / Single Leg Glute Bridge 3x15 / Bird Dog 3x10\n\nMOBILITY: Hip flexor 2min each side / Hamstring 90sec each side'}
+  rest:{label:'Rest Day',cat:'Rest',color:'#505060',bg:'transparent',tss:0,mins:0,type:'Rest',
+    desc:'Complete rest. No training.',
+    goal:'Full recovery. Prioritize sleep, nutrition, and hydration.',
+    steps:[]},
+
+  z2_90:{label:'Zone 2 — 90min',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:50,mins:90,type:'Ride',
+    desc:`Easy aerobic. ${Z2LO}–${Z2HI}W. HR 130–148bpm. Cadence 88–95rpm.`,
+    goal:'Build aerobic base and mitochondrial density without accumulating fatigue. Key session for long-term endurance development.',
+    steps:[
+      {type:'warmup',label:'Warm Up',dur:10,watts:`160–${Z2LO}W`,text:`Ride 10 minutes gradually raising power from 160 to ${Z2LO}W. Spin easy, HR should be below 135bpm.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP button to start main set'},
+      {type:'work',label:'Zone 2 Main',dur:70,watts:`${Z2LO}–${Z2HI}W`,text:`Hold ${Z2LO}–${Z2HI}W. HR 130–148bpm. Cadence 88–95rpm. On hills: stand and soft-pedal rather than pushing hard.`},
+      {type:'cooldown',label:'Cool Down',dur:10,watts:'160W',text:'Drop to 160W. Easy spin, let HR come down below 120bpm before stopping.'}
+    ]},
+
+  z2_120:{label:'Zone 2 — 2h',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:68,mins:120,type:'Ride',
+    desc:`Aerobic base. ${Z2LO}–${Z2HI}W. HR 130–148bpm.`,
+    goal:'Primary aerobic conditioning session. Two hours in Zone 2 significantly stimulates mitochondrial biogenesis and fat oxidation.',
+    steps:[
+      {type:'warmup',label:'Warm Up',dur:12,watts:`155–${Z2LO}W`,text:`Ride 12 minutes gradually raising power from 155 to ${Z2LO}W. No rushing — let the body warm up naturally.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP button to start main set'},
+      {type:'work',label:'Zone 2 Main',dur:96,watts:`${Z2LO}–${Z2HI}W`,text:`Hold ${Z2LO}–${Z2HI}W for 96 minutes. HR 130–148bpm. Cadence 88–95rpm. On climbs: keep power steady, stand if needed.`},
+      {type:'cooldown',label:'Cool Down',dur:12,watts:'160W',text:'Easy 160W spin to finish. Focus on breathing and relaxing.'}
+    ]},
+
+  tempo_3x15:{label:'Tempo — 3×15min',cat:'Tempo',color:'#f59e0b',bg:'rgba(245,158,11,.1)',tss:82,mins:90,type:'Ride',
+    desc:`3×15min at ${Math.round(FTP*.78)}–${Math.round(FTP*.85)}W. Attacks Tempo weakness directly.`,
+    goal:'Build muscular endurance and aerobic efficiency. Tempo intervals train your body to sustain moderate-high output for extended periods — critical for 80km road racing.',
+    steps:[
+      {type:'warmup',label:'Warm Up',dur:15,watts:`160–${Math.round(FTP*.75)}W`,text:`15min build: start 160W, reach ${Math.round(FTP*.75)}W by minute 12. Last 2min: 2×20sec at ${SSLO}W with 40sec easy between to prime legs.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1'},
+      {type:'work',label:'Tempo Interval 1',dur:15,watts:`${Math.round(FTP*.78)}–${Math.round(FTP*.85)}W`,text:`15min at ${Math.round(FTP*.78)}–${Math.round(FTP*.85)}W. Breathing should be controlled but noticeable. Cadence 88–92rpm.`},
+      {type:'rest',label:'Recovery',dur:5,watts:`${RECOV}W`,text:`5min easy at ${RECOV}W. Shake legs out.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2'},
+      {type:'work',label:'Tempo Interval 2',dur:15,watts:`${Math.round(FTP*.78)}–${Math.round(FTP*.85)}W`,text:`15min same target. Stay relaxed through shoulders and upper body.`},
+      {type:'rest',label:'Recovery',dur:5,watts:`${RECOV}W`,text:`5min easy at ${RECOV}W.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 3'},
+      {type:'work',label:'Tempo Interval 3',dur:15,watts:`${Math.round(FTP*.80)}–${Math.round(FTP*.86)}W`,text:`Final 15min. Push harder than intervals 1-2 if legs feel good.`},
+      {type:'cooldown',label:'Cool Down',dur:10,watts:'160W',text:'Easy 10min spin. Let heart rate drop naturally.'}
+    ]},
+
+  ss_3x15:{label:'Sweet Spot — 3×15min',cat:'Sweet Spot',color:'#f97316',bg:'rgba(249,115,22,.1)',tss:80,mins:85,type:'Ride',
+    desc:`3×15min at ${SSLO}–${SSHI}W. Building sweet spot base. Cadence 90–95rpm.`,
+    goal:'Sweet spot intervals deliver the highest return on investment — building fitness without requiring as much recovery as threshold. Essential for VeloPeak 500 preparation.',
+    steps:[
+      {type:'warmup',label:'Warm Up',dur:12,watts:`160–${Math.round(FTP*.75)}W`,text:`12min build from 160W to ${Math.round(FTP*.75)}W. Last 90sec: single burst at ${SSLO}W to prime neuromuscular system.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1'},
+      {type:'work',label:'Sweet Spot 1',dur:15,watts:`${SSLO}–${SSHI}W`,text:`15min at ${SSLO}–${SSHI}W. Cadence 90–95rpm. HR will climb to 158–165bpm by minute 8. Stay smooth.`},
+      {type:'rest',label:'Recovery',dur:4,watts:`${RECOV}W`,text:`4min easy ${RECOV}W. Drink and prepare mentally.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2'},
+      {type:'work',label:'Sweet Spot 2',dur:15,watts:`${SSLO}–${SSHI}W`,text:`15min same target. Focus on pedal stroke efficiency, not just power numbers.`},
+      {type:'rest',label:'Recovery',dur:4,watts:`${RECOV}W`,text:`4min easy ${RECOV}W.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 3'},
+      {type:'work',label:'Sweet Spot 3',dur:15,watts:`${SSLO}–${SSHI}W`,text:`Final 15min. Push to ${SSHI}W in last 5min if legs still feel responsive.`},
+      {type:'cooldown',label:'Cool Down',dur:10,watts:'160W',text:'10min easy cooldown.'}
+    ]},
+
+  ss_2x20:{label:'Sweet Spot 2×20 — KEY',cat:'Sweet Spot',color:'#f97316',bg:'rgba(249,115,22,.14)',tss:90,mins:80,type:'Ride',
+    desc:`KEY SESSION. 2×20min at ${SSLO}–${SSHI}W. Primary race fitness driver. Cadence 90–95rpm.`,
+    goal:'The single most effective workout for road racing fitness. Twenty-minute sweet spot intervals develop sustained power output directly applicable to the 80km VeloPeak 500 course.',
+    steps:[
+      {type:'warmup',label:'Warm Up',dur:15,watts:`160–270W`,text:`15min progressive build: 160W→200W→240W→270W in 5min blocks. Last 3min: 3×30sec at ${SSLO}W (30sec easy between) to fully prime legs.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 20 minutes'},
+      {type:'work',label:'Sweet Spot Interval 1',dur:20,watts:`${SSLO}–${SSHI}W`,text:`20min at ${SSLO}–${SSHI}W. Settle into rhythm by minute 3. HR 158–165bpm by minute 10. Cadence 90–95rpm. Stay aerodynamic.`},
+      {type:'rest',label:'Recovery',dur:5,watts:`${RECOV}W`,text:`5min easy ${RECOV}W. Recover fully, drink, prepare for final interval.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2 — 20 minutes'},
+      {type:'work',label:'Sweet Spot Interval 2',dur:20,watts:`${SSLO}–${SSHI}W`,text:`20min. Start at ${SSLO}W. Last 5min: push to ${SSHI}W if power still feels controlled. This is where the adaptation happens.`},
+      {type:'cooldown',label:'Cool Down',dur:10,watts:'160W',text:'10min easy spin. Note back soreness if any — if present, reduce duration next time.'}
+    ]},
+
+  long_z2:{label:'Long Zone 2 — 3h',cat:'Endurance',color:'#3b82f6',bg:'rgba(59,130,246,.1)',tss:115,mins:180,type:'Ride',
+    desc:`Pure aerobic. ${Z2LO}–${Math.round(FTP*.70)}W all ride. HR under 148bpm.`,
+    goal:'Maximum aerobic conditioning stimulus. Three hours in Zone 2 drives significant adaptations in fat metabolism and cardiac output — the foundation of endurance racing.',
+    steps:[
+      {type:'warmup',label:'Warm Up',dur:15,watts:`155–${Z2LO}W`,text:`Easy 15min build from 155W to ${Z2LO}W. No urgency.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start main set'},
+      {type:'work',label:'Zone 2 Sustained',dur:150,watts:`${Z2LO}–${Math.round(FTP*.70)}W`,text:`2h30min at ${Z2LO}–${Math.round(FTP*.70)}W. HR 130–148bpm throughout. If HR drifts above 150bpm, reduce power. Eat every 45min.`},
+      {type:'cooldown',label:'Cool Down',dur:15,watts:'155W',text:'15min easy spin home.'}
+    ]},
+
+  long_ss:{label:'Long Ride + SS Blocks',cat:'Endurance',color:'#3b82f6',bg:'rgba(59,130,246,.1)',tss:132,mins:210,type:'Ride',
+    desc:`Z2 base + 2×15min sweet spot. VeloPeak 500 race simulation.`,
+    goal:'Simulates VeloPeak 500 demands — sustained aerobic effort with hard climbs mid-race. Sweet spot on tired legs is the most race-specific training you can do.',
+    steps:[
+      {type:'warmup',label:'Warm Up',dur:15,watts:`155–${Z2LO}W`,text:`Easy 15min build to ${Z2LO}W.`},
+      {type:'work',label:'Zone 2 Phase 1',dur:45,watts:`${Z2LO}–${Z2HI}W`,text:`45min aerobic base at ${Z2LO}–${Z2HI}W. Save energy for the intervals.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Sweet Spot Block 1'},
+      {type:'work',label:'Sweet Spot Block 1',dur:15,watts:`${SSLO}–${Math.round(FTP*.91)}W`,text:`15min at ${SSLO}–${Math.round(FTP*.91)}W on tired legs. This is race simulation — dig in.`},
+      {type:'rest',label:'Recovery',dur:5,watts:`${RECOV}W`,text:`5min recovery ${RECOV}W.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Sweet Spot Block 2'},
+      {type:'work',label:'Sweet Spot Block 2',dur:15,watts:`${SSLO}–${Math.round(FTP*.91)}W`,text:`Final 15min hard. Stand if back tightens. Match block 1 power.`},
+      {type:'work',label:'Zone 2 Finish',dur:45,watts:`${Z2LO}–${Z2HI}W`,text:`45min easy Z2 to finish. Total: 3h30min.`},
+      {type:'cooldown',label:'Cool Down',dur:15,watts:'155W',text:'Easy 15min spin.'}
+    ]},
+
+  threshold_2x12:{label:'Threshold — 2×12min',cat:'Threshold',color:'#E01A22',bg:'rgba(224,26,34,.1)',tss:88,mins:70,type:'Ride',
+    desc:`HARD. 2×12min at ${THLO}–${THHI}W. Weeks 5–6 only. Do not attempt when fatigued.`,
+    goal:'Raise FTP ceiling. Twelve minutes at threshold pushes your lactate threshold higher. Only do this session when CTL is high and TSB is positive.',
+    steps:[
+      {type:'warmup',label:'Warm Up',dur:15,watts:`160–${Math.round(FTP*.80)}W`,text:`15min progressive build. Last 5min: 3×1min at ${THLO}W (1min easy between) to wake up threshold system.`},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 12 minutes at threshold'},
+      {type:'work',label:'Threshold Interval 1',dur:12,watts:`${THLO}–${THHI}W`,text:`12min at ${THLO}–${THHI}W. HR will hit 170–180bpm. This is supposed to be very hard. Hold form.`},
+      {type:'rest',label:'Recovery',dur:8,watts:'185W',text:'8min recovery at 185W. Controlled breathing.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2 — final 12 minutes'},
+      {type:'work',label:'Threshold Interval 2',dur:12,watts:`${THLO}–${THHI}W`,text:`Final 12min. Last 2min: push everything you have left. This is where fitness is built.`},
+      {type:'cooldown',label:'Cool Down',dur:10,watts:'160W',text:'10min easy spin. You earned it.'}
+    ]},
+
+  gym_cycling:{label:'Gym — Cycling Specific',cat:'Gym',color:'#8b5cf6',bg:'rgba(139,92,246,.1)',tss:30,mins:50,type:'WeightTraining',
+    desc:'50min. Single leg, glutes, core. No heavy bilateral squats until after Megre Aug 1.',
+    goal:'Build cycling-specific strength — glute dominance, single-leg stability, and core endurance. Reduces injury risk and improves power transfer on the bike.',
+    steps:[
+      {type:'warmup',label:'Warm Up',dur:5,text:'Hip circles 10 each direction. Leg swings 10 each leg. Bodyweight squats ×10. Glute bridges ×15.'},
+      {type:'work',label:'Main Block — 2-3 Rounds',text:`Bulgarian Split Squat: 3×10 each leg\nSingle Leg Press: 3×12 each leg\nRomanian Deadlift: 3×10 at 60–70%\nHip Thrust: 3×15\nCopenhagen Plank: 3×20sec each side`},
+      {type:'work',label:'Core Circuit',text:'Dead Bug: 3×10 / Single Leg Glute Bridge: 3×15 / Bird Dog: 3×10'},
+      {type:'cooldown',label:'Mobility',text:'Hip flexor stretch: 2min each side\nHamstring: 90sec each side\nPigeon pose: 90sec each side'}
+    ]}
 };
 
 const DAYS=['MON','TUE','WED','THU','FRI','SAT','SUN'];
@@ -844,33 +964,74 @@ async function buildCards(){
     const st=DS[day],s=SESS[st.s];
     const dateStr=fiso(dates[i]);
     const actuals=weekActuals[dateStr]||[];
+    const hasDone=actuals.length>0;
+    const isRide=s&&s.type==='Ride';
 
+    // Steps preview HTML
+    let stepsHtml='';
+    if(st.on&&st.s!=='rest'&&s.steps&&s.steps.length){
+      const stepColors={warmup:'#E01A22',work:'#3b82f6',rest:'#22c55e',cooldown:'#22c55e',lap:'transparent'};
+      stepsHtml=`<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">Workout Steps</div>
+        ${s.steps.map(step=>{
+          if(step.type==='lap')return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <div style="width:3px;height:28px;background:transparent;border-radius:2px;flex-shrink:0"></div>
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--yellow);font-weight:700;letter-spacing:.06em">⚡ ${step.text}</div>
+            </div>
+          </div>`;
+          const col=stepColors[step.type]||'#3b82f6';
+          return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <div style="width:3px;height:36px;background:${col};border-radius:2px;flex-shrink:0"></div>
+            <div style="flex:1">
+              <div style="font-size:11px;font-weight:700;color:#fff">${step.label}${step.dur?` — ${step.dur}min`:''}</div>
+              ${step.watts?`<div style="font-size:10px;color:${col};font-weight:600">${step.watts}</div>`:''}
+              <div style="font-size:10px;color:var(--txt3);line-height:1.5">${step.text.slice(0,80)}${step.text.length>80?'…':''}</div>
+            </div>
+            <div style="font-size:11px;color:var(--txt3);flex-shrink:0">${step.dur?step.dur+'m':''}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+
+    // Actual rides done
     let actualHtml='';
     actuals.forEach(a=>{
       const np=Math.round(a.icu_weighted_avg_watts??0);
       const tss=Math.round(a.icu_training_load??0);
       const hr=Math.round(a.average_heartrate??0);
-      const cad=Math.round(a.average_cadence??0);
       const ifp=np?Math.round(np/FTP*100):0;
-      const dur=fdur(a.moving_time);
       actualHtml+=`<div class="actual-pill">
-        <span style="color:var(--green);font-weight:700;font-size:11px">✓ DONE — ${a.name||'Ride'}</span><br>
-        <span style="color:var(--txt2);font-size:11px">${tss} TSS${np?' · '+np+'W NP ('+ifp+'%)':''} · ${hr?hr+'bpm':''} · ${cad?cad+'rpm':''} · ${dur}</span>
+        <span style="color:var(--green);font-weight:700;font-size:11px">✓ COMPLETED — ${a.name||'Ride'}</span><br>
+        <span style="color:var(--txt2);font-size:11px">${tss} TSS${np?' · '+np+'W NP ('+ifp+'%)':''} · ${hr?hr+'bpm':''} · ${fdur(a.moving_time)}</span>
       </div>`;
     });
 
-    const info=st.on&&st.s!=='rest'?`<div class="dinfo"><span style="color:${s.color};font-weight:700">${s.tss} TSS · ${s.mins}min</span><br><span style="color:var(--txt3)">${s.desc}</span></div>`:'';
-    const hasDone=actuals.length>0;
-    return`<div class="dcard ${st.on?'':'off'} ${hasDone?'has-actual':''}">
+    const info=st.on&&st.s!=='rest'?`<div class="dinfo">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="color:${s.color};font-weight:700">${s.tss} TSS · ${s.mins}min · ${s.cat||''}</span>
+        <button onclick="openDetail('${st.s}')" style="background:transparent;border:1px solid var(--border2);color:var(--txt3);padding:3px 8px;border-radius:4px;font-size:10px;cursor:pointer;font-family:'Barlow',sans-serif">Details</button>
+      </div>
+      <div style="color:var(--txt3);font-size:11px;margin-top:4px">${s.desc}</div>
+    </div>`:'';
+
+    const pushBtn=st.on&&st.s!=='rest'?`<div style="margin-top:8px">
+      <button onclick="pushOneDay('${day}',${i})" style="width:100%;background:var(--red);border:none;color:#fff;padding:8px;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;letter-spacing:.04em">
+        ↑ Push to Intervals.icu / Garmin
+      </button>
+    </div>`:'';
+
+    return`<div class="dcard ${st.on?'':'off'} ${hasDone?'has-actual':''}" draggable="true"
+      ondragstart="dragStart('${day}')" ondragover="dragOver(event,'${day}')" ondrop="dragDrop(event,'${day}')">
       <div class="drow">
         <button class="tog ${st.on?'on':''}" onclick="togDay('${day}')"></button>
         <span class="dname">${day}</span>
-        <span class="ddate">${fd(dates[i])}</span>
+        <span class="ddate" style="font-size:10px">${fd(dates[i])}</span>
         <select class="dsel" onchange="setS('${day}',this.value)" ${!st.on?'disabled':''}>
           ${opts.replace(`value="${st.s}"`,`value="${st.s}" selected`)}
         </select>
       </div>
-      ${info}${actualHtml}
+      ${info}${stepsHtml}${actualHtml}${pushBtn}
     </div>`;
   }).join('');
   updateSum();
@@ -879,6 +1040,165 @@ async function buildCards(){
 
 function togDay(day){DS[day].on=!DS[day].on;if(!DS[day].on)DS[day].s='rest';buildCards();}
 function setS(day,val){DS[day].s=val;DS[day].on=val!=='rest';buildCards();}
+
+// ── DRAG AND DROP ──────────────────────────────────────────────────────
+let dragFrom=null;
+function dragStart(day){dragFrom=day;}
+function dragOver(e,day){e.preventDefault();}
+function dragDrop(e,toDay){
+  e.preventDefault();
+  if(!dragFrom||dragFrom===toDay)return;
+  const tmp=Object.assign({},DS[dragFrom]);
+  DS[dragFrom]=Object.assign({},DS[toDay]);
+  DS[toDay]=tmp;
+  buildCards();
+  dragFrom=null;
+}
+
+// ── WORKOUT LIBRARY MODAL ─────────────────────────────────────────────
+function openLibrary(){
+  const cats=['Endurance','Tempo','Sweet Spot','Threshold','Gym'];
+  const catColors={Endurance:'#22c55e',Tempo:'#f59e0b','Sweet Spot':'#f97316',Threshold:'#E01A22',Gym:'#8b5cf6'};
+  let html='';
+  cats.forEach(cat=>{
+    const sessions=Object.entries(SESS).filter(([k,v])=>v.cat===cat);
+    if(!sessions.length)return;
+    html+=`<div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.08em;margin:20px 0 10px">${cat}</div>`;
+    sessions.forEach(([key,s])=>{
+      html+=`<div onclick="openDetail('${key}')" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:4px;height:44px;background:${s.color};border-radius:2px;flex-shrink:0"></div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:3px">${s.label}</div>
+            <div style="font-size:11px;color:var(--txt3)">${s.tss?s.tss+' TSS · ':''} ${s.mins?s.mins+'min · ':''} ${s.desc.slice(0,60)}…</div>
+          </div>
+          <div style="font-size:11px;color:var(--txt3)">→</div>
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById('lib-content').innerHTML=html;
+  document.getElementById('lib-modal').style.display='block';
+}
+function closeLibrary(){document.getElementById('lib-modal').style.display='none';}
+
+// ── SESSION DETAIL MODAL ──────────────────────────────────────────────
+function openDetail(key){
+  const s=SESS[key];if(!s)return;
+  closeLibrary();
+  const stepColors={warmup:'#E01A22',work:'#3b82f6',rest:'#22c55e',cooldown:'#22c55e',lap:null};
+  const stepsHtml=s.steps.map(step=>{
+    if(step.type==='lap')return`<div style="padding:10px 16px;background:rgba(245,158,11,.08);border-left:3px solid var(--yellow);margin:4px 0;border-radius:4px">
+      <div style="font-size:11px;font-weight:700;color:var(--yellow);letter-spacing:.06em">⚡ ${step.text}</div>
+    </div>`;
+    const col=stepColors[step.type]||'#3b82f6';
+    return`<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="width:4px;background:${col};border-radius:2px;flex-shrink:0;min-height:40px"></div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <div style="font-size:13px;font-weight:700;color:#fff">${step.label}</div>
+          <div style="font-size:12px;color:${col};font-weight:700">${step.watts||''}</div>
+        </div>
+        <div style="font-size:12px;color:var(--txt3);line-height:1.65">${step.text}</div>
+        ${step.dur?`<div style="font-size:10px;color:var(--txt3);margin-top:4px;font-weight:600">${step.dur} minutes</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const dayPicker=DAYS.map(d=>`<button onclick="assignToDay('${key}','${d}')" style="background:var(--bg4);border:1px solid var(--border2);color:var(--txt2);padding:6px 12px;border-radius:5px;cursor:pointer;font-family:'Barlow',sans-serif;font-size:12px;font-weight:600">${d}</button>`).join('');
+
+  document.getElementById('det-content').innerHTML=`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <div style="background:var(--bg3);padding:18px 20px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;color:${s.color};text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px">${s.cat||''}</div>
+            <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:6px">${s.label}</div>
+            <div style="display:flex;gap:20px;font-size:13px;color:var(--txt3)">
+              ${s.tss?`<span><strong style="color:#fff">${s.tss}</strong> TSS</span>`:''}
+              ${s.mins?`<span><strong style="color:#fff">${s.mins}</strong> min</span>`:''}
+              ${s.mins&&s.tss?`<span><strong style="color:#fff">${(s.tss/s.mins*60).toFixed(2)}</strong> IF</span>`:''}
+            </div>
+          </div>
+          <button onclick="closeDetail()" style="background:var(--bg4);border:1px solid var(--border2);color:var(--txt2);padding:6px 14px;border-radius:5px;cursor:pointer;font-family:'Barlow',sans-serif;font-size:13px">✕</button>
+        </div>
+      </div>
+
+      <div style="padding:18px 20px">
+        ${s.goal?`<div style="margin-bottom:18px">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Workout Goals</div>
+          <div style="font-size:13px;color:var(--txt2);line-height:1.7">${s.goal}</div>
+        </div>`:''}
+
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Steps</div>
+        ${stepsHtml}
+
+        <div style="margin-top:18px">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Add to Calendar Day</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">${dayPicker}</div>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('det-modal').style.display='block';
+}
+
+function closeDetail(){document.getElementById('det-modal').style.display='none';}
+
+function assignToDay(sessKey,day){
+  DS[day]={on:true,s:sessKey};
+  closeDetail();
+  buildCards();
+  showTab('builder');
+}
+
+// ── PUSH SINGLE DAY ───────────────────────────────────────────────────
+function cleanStr(s){return(s||'').replace(/[\u00d7\u2013\u2014\u2192]/g,m=>({'\u00d7':'x','\u2013':'-','\u2014':'-','\u2192':'->'})[m]).replace(/[^\x00-\x7F\n]/g,'').replace(/[^\S\n]+/g,' ').trim();}
+
+function buildWorkoutDescription(sessKey){
+  const s=SESS[sessKey];if(!s)return'';
+  let txt=`${s.label}\n${s.tss} TSS | ${s.mins}min\n\n`;
+  if(s.goal)txt+=`GOAL: ${s.goal}\n\n`;
+  txt+='STEPS:\n';
+  s.steps.forEach(step=>{
+    if(step.type==='lap')txt+=`\n>>> ${step.text} <<<\n\n`;
+    else{
+      txt+=`${step.label.toUpperCase()}`;
+      if(step.dur)txt+=` (${step.dur}min)`;
+      if(step.watts)txt+=` — ${step.watts}`;
+      txt+=`\n${step.text}\n\n`;
+    }
+  });
+  return cleanStr(txt);
+}
+
+async function pushOneDay(day,dayIndex){
+  const dates=getWeekDates();
+  const st=DS[day];
+  if(!st.on||st.s==='rest')return;
+  const s=SESS[st.s];if(!s)return;
+
+  const log=document.getElementById('plog');
+  log.style.display='block';
+  alog(`Pushing ${day} — ${s.label}...`,'linf');
+
+  const desc=buildWorkoutDescription(st.s);
+  const payload={
+    category:'WORKOUT',
+    name:cleanStr(s.label),
+    description:desc,
+    type:s.type||'Ride',
+    start_date_local:fiso(dates[dayIndex])+'T09:00:00',
+    moving_time:s.mins*60,
+    load_target:s.tss
+  };
+
+  const res=await api('POST','/events',payload);
+  if(res.ok){
+    alog(`✓ Pushed! Opens in Intervals.icu & syncs to Garmin.`,'lok');
+  }else{
+    alog(`✗ Failed (${res.status}): ${JSON.stringify(res.data).slice(0,80)}`,'lerr');
+  }
+}
 
 function updateSum(){
   let tss=0,mins=0,sess=0;const zc={};
@@ -957,36 +1277,6 @@ function buildSeasonOverview(){
   html+='</div>';
   document.getElementById('season-overview').innerHTML=html;
 }
-
-// ── PUSH WORKOUTS ──────────────────────────────────────────────────────
-function cleanStr(s){return(s||'').replace(/\u00d7/g,'x').replace(/[\u2013\u2014]/g,'-').replace(/\u2192/g,'->').replace(/[^\x00-\x7F\n]/g,'').replace(/[^\S\n]+/g,' ').trim();}
-
-async function pushWorkouts(){
-  const btn=document.getElementById('pbtn'),log=document.getElementById('plog');
-  log.innerHTML='';log.style.display='block';btn.disabled=true;btn.textContent='Pushing...';
-  const dates=getWeekDates();let pushed=0,failed=0;
-  alog('Connecting...','linf');
-  const auth=await api('GET','').catch(()=>({ok:false}));
-  if(!auth.ok){alog('Connection failed. Is server running?','lerr');btn.disabled=false;btn.textContent='Push to Intervals.icu';return;}
-  alog('Connected.','lok');
-  for(let i=0;i<DAYS.length;i++){
-    const day=DAYS[i],st=DS[day];
-    if(!st.on||st.s==='rest')continue;
-    const s=SESS[st.s];if(!s||s.tss===0)continue;
-    const name=cleanStr(s.label);
-    const desc=cleanStr(s.desc)+(s.doc?'\n\nSTEPS:\n'+cleanStr(s.doc):'');
-    const payload={category:'WORKOUT',name,description:desc,type:s.type||'Ride',start_date_local:fiso(dates[i])+'T09:00:00',moving_time:s.mins*60,load_target:s.tss};
-    alog(`Pushing ${day} ${fd(dates[i])} — ${name}...`,'linf');
-    const res=await api('POST','/events',payload);
-    if(res.ok){alog(`  Created (ID: ${res.data?.id||'?'})`,'lok');pushed++;}
-    else{alog(`  Failed (${res.status}): ${JSON.stringify(res.data).slice(0,100)}`,'lerr');failed++;}
-  }
-  alog('---','linf');alog(`Done: ${pushed} pushed, ${failed} failed`,pushed>0?'lok':'lerr');
-  if(pushed>0)alog('Open intervals.icu to see your calendar.','lok');
-  btn.disabled=false;btn.textContent=pushed>0?`${pushed} workouts pushed!`:'Push to Intervals.icu';
-  setTimeout(()=>{btn.textContent='Push to Intervals.icu';},5000);
-}
-function alog(msg,cls){const el=document.getElementById('plog');el.style.display='block';el.innerHTML+=`<div class="${cls}">${msg}</div>`;el.scrollTop=el.scrollHeight;}
 
 // ── TAB NAV ────────────────────────────────────────────────────────────
 function showTab(tab){
@@ -1120,6 +1410,8 @@ async function sendChat(){
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────
+document.getElementById('lib-modal').addEventListener('click',e=>{if(e.target.id==='lib-modal')closeLibrary();});
+document.getElementById('det-modal').addEventListener('click',e=>{if(e.target.id==='det-modal')closeDetail();});
 buildCards();
 loadAll();
 </script>
