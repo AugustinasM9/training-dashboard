@@ -140,6 +140,7 @@ canvas{display:block;width:100%!important}
   <div class="logo">TRAIN<span>ER</span></div>
   <nav class="navtabs">
     <div class="navtab active" onclick="showTab('dash')">Dashboard</div>
+    <div class="navtab" onclick="showTab('career')">Career</div>
     <div class="navtab" onclick="showTab('builder')">Workout Builder</div>
     <div class="navtab" onclick="showTab('chat')">AI Coach</div>
   </nav>
@@ -249,6 +250,98 @@ canvas{display:block;width:100%!important}
       <span id="actct" style="font-family:'Barlow';font-size:11px;font-weight:500;color:var(--txt3);text-transform:none;letter-spacing:0"></span>
     </div>
     <div id="acts"><div class="spin"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Loading activities...</span></div></div>
+  </div>
+
+</div>
+
+<!-- ══ CAREER ═════════════════════════════════════════════════════════ -->
+<div class="page" id="page-career">
+
+  <div class="sec-hdr" style="margin-bottom:16px">
+    <div class="sec-title">Career</div>
+    <span style="font-size:12px;color:var(--txt3)">Training analysis based on 365 days</span>
+  </div>
+
+  <!-- Athlete Levels -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr">Athlete Levels<span style="font-family:'Barlow';font-size:11px;font-weight:500;color:var(--txt3);text-transform:none;letter-spacing:0;margin-left:auto">Based on 337 FTP</span></div>
+    <div id="athlete-levels" style="padding:10px 0">
+      <div class="spin"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Calculating levels...</span></div>
+    </div>
+  </div>
+
+  <!-- Training Stats Grid -->
+  <div class="grid3" style="margin-bottom:14px">
+    <div class="card">
+      <div class="card-hdr">Form Trend (90 days)</div>
+      <div style="height:140px"><canvas id="careerFormChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">Weekly Averages</div>
+      <div style="padding:8px 0">
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--txt3);font-size:13px">Avg TSS/Week</span>
+          <span id="car-avg-tss" style="font-weight:700;color:var(--yellow)">--</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--txt3);font-size:13px">Avg Hours/Week</span>
+          <span id="car-avg-hrs" style="font-weight:700">--</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:7px 0">
+          <span style="color:var(--txt3);font-size:13px">Training Days/Week</span>
+          <span id="car-avg-days" style="font-weight:700">--</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">Zone Distribution (Last 12 Weeks)</div>
+      <div style="height:140px"><canvas id="careerZoneChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Training Plan Progress -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr">Training Plans</div>
+    <div style="padding:12px 0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">VeloPeak 500 Preparation</div>
+          <div style="font-size:11px;color:var(--txt3)">Week <span id="car-plan-week">--</span> of 12</div>
+        </div>
+      </div>
+      <div style="height:6px;background:var(--bg4);border-radius:3px;overflow:hidden">
+        <div id="car-plan-progress" style="height:100%;background:var(--red);width:0%;transition:width .4s"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Events Countdown -->
+  <div class="card">
+    <div class="card-hdr">Events</div>
+    <div style="display:flex;gap:12px;padding:8px 0">
+      <div style="flex:1;padding:14px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:32px;height:32px;border-radius:6px;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;color:#fff">B</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#fff">VeloPeak 500</div>
+            <div style="font-size:10px;color:var(--txt3)">July 6, 2026</div>
+          </div>
+        </div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;color:var(--red);line-height:1" id="car-vp-days">--</div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:2px">days remaining</div>
+      </div>
+      <div style="flex:1;padding:14px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:32px;height:32px;border-radius:6px;background:var(--txt3);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;color:#fff">C</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#fff">Megre Gravel</div>
+            <div style="font-size:10px;color:var(--txt3)">August 1, 2026</div>
+          </div>
+        </div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;color:var(--txt2);line-height:1" id="car-mg-days">--</div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:2px">days remaining</div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -388,14 +481,14 @@ function updateCountdowns(){
 
 // ── ACTIVITIES ─────────────────────────────────────────────────────────
 async function loadActivities(){
-  const res=await api('GET',`/activities?oldest=${daysAgo(112)}&newest=${daysAgo(0)}`);
+  const res=await api('GET',`/activities?oldest=${daysAgo(365)}&newest=${daysAgo(0)}`);
   if(!res.ok||!Array.isArray(res.data)){
     document.getElementById('acts').innerHTML=`<div style="padding:20px;color:var(--txt3);font-size:12px;text-align:center">No activity data (${res.status||'error'}) — check server connection</div>`;
     return null;
   }
   aCache=res.data;
   const data=res.data;
-  document.getElementById('actct').textContent=data.length+' activities · 16 weeks';
+  document.getElementById('actct').textContent=data.length+' activities · 52 weeks';
 
   // Week TSS + hours
   const mon=new Date();mon.setDate(mon.getDate()-((mon.getDay()+6)%7));mon.setHours(0,0,0,0);
@@ -470,6 +563,138 @@ async function loadActivities(){
 }
 
 // ── WELLNESS — CTL/ATL/TSB + fitness chart ─────────────────────────────
+function calculateAthleteLevels(){
+  if(!aCache||!aCache.length)return null;
+  
+  // Analyze last 12 weeks of rides with power data
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-84);
+  const rides=aCache.filter(a=>new Date(a.start_date_local)>=cutoff&&a.average_watts&&a.moving_time>600);
+  
+  if(!rides.length)return{endurance:0,tempo:0,sweetspot:0,threshold:0,vo2:0,anaerobic:0};
+  
+  // Calculate time in each zone (seconds)
+  const zones={z1:0,z2:0,z3:0,z4:0,z5:0,z6:0};
+  let totalTime=0;
+  
+  rides.forEach(a=>{
+    const np=a.icu_weighted_avg_watts||a.average_watts;
+    const dur=a.moving_time;
+    const pct=Math.round(np/FTP*100);
+    totalTime+=dur;
+    
+    if(pct>=105)zones.z6+=dur;
+    else if(pct>=94)zones.z5+=dur;
+    else if(pct>=88)zones.z4+=dur;
+    else if(pct>=76)zones.z3+=dur;
+    else if(pct>=56)zones.z2+=dur;
+    else zones.z1+=dur;
+  });
+  
+  // Convert to percentages and map to 0-10 scale
+  const pct={
+    z1:zones.z1/totalTime*100,
+    z2:zones.z2/totalTime*100,
+    z3:zones.z3/totalTime*100,
+    z4:zones.z4/totalTime*100,
+    z5:zones.z5/totalTime*100,
+    z6:zones.z6/totalTime*100
+  };
+  
+  // Scoring logic: more time in zone = higher score, capped at 10
+  return{
+    endurance:Math.min(10,Math.round(pct.z2/4)), // Z2 time → Endurance
+    tempo:Math.min(10,Math.round(pct.z3/2.5)),   // Z3 time → Tempo
+    sweetspot:Math.min(10,Math.round(pct.z4/2)), // Z4 time → Sweet Spot
+    threshold:Math.min(10,Math.round(pct.z5/1.5)), // Z5 time → Threshold
+    vo2:Math.min(10,Math.round(pct.z6/1.2)),     // Z6 time → VO2 Max
+    anaerobic:Math.min(10,Math.round((pct.z5+pct.z6)/2)) // Z5+Z6 → Anaerobic
+  };
+}
+
+function buildCareerPage(){
+  if(!aCache||!aCache.length){
+    document.getElementById('athlete-levels').innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No data yet — activities will appear after first sync</div>';
+    return;
+  }
+  
+  // Calculate athlete levels
+  const levels=calculateAthleteLevels();
+  
+  // Build athlete levels bars
+  const levelLabels=['Endurance','Tempo','Sweet Spot','Threshold','VO2 Max','Anaerobic'];
+  const levelKeys=['endurance','tempo','sweetspot','threshold','vo2','anaerobic'];
+  const levelColors=['#3b82f6','#f59e0b','#f97316','#E01A22','#8b5cf6','#E01A22'];
+  
+  let levelsHtml='';
+  levelKeys.forEach((key,i)=>{
+    const val=levels[key]||0;
+    const pct=val*10;
+    levelsHtml+=`<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
+      <div style="width:110px;font-size:13px;color:var(--txt3);font-weight:600">${levelLabels[i]}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#fff;width:40px">${val.toFixed(1)}</div>
+      <div style="flex:1;height:12px;background:var(--bg4);border-radius:6px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${levelColors[i]};border-radius:6px;transition:width .6s"></div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('athlete-levels').innerHTML=levelsHtml;
+  
+  // Weekly averages (last 16 weeks)
+  const cutoff16=new Date();cutoff16.setDate(cutoff16.getDate()-112);
+  const recent=aCache.filter(a=>new Date(a.start_date_local)>=cutoff16);
+  const totalTSS=recent.reduce((s,a)=>s+(a.icu_training_load||0),0);
+  const totalHrs=recent.reduce((s,a)=>s+(a.moving_time||0),0)/3600;
+  const totalDays=new Set(recent.map(a=>a.start_date_local.slice(0,10))).size;
+  
+  document.getElementById('car-avg-tss').textContent=Math.round(totalTSS/16);
+  document.getElementById('car-avg-hrs').textContent=(totalHrs/16).toFixed(1)+'h';
+  document.getElementById('car-avg-days').textContent=(totalDays/16).toFixed(1);
+  
+  // Form trend chart (90 days)
+  const cutoff90=new Date();cutoff90.setDate(cutoff90.getDate()-90);
+  const form90=aCache.filter(a=>new Date(a.start_date_local)>=cutoff90&&a.icu_ctl!=null).slice(-90);
+  if(form90.length>10){
+    mkChart('careerFormChart','line',form90.map(a=>fd(a.start_date_local)),[
+      {label:'CTL',data:form90.map(a=>Math.round(a.icu_ctl||0)),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.06)',fill:true,tension:0.35,borderWidth:2,pointRadius:0},
+      {label:'ATL',data:form90.map(a=>Math.round(a.icu_atl||0)),borderColor:'#E01A22',backgroundColor:'transparent',tension:0.35,borderWidth:2,pointRadius:0}
+    ],{legend:{display:false},maxX:12});
+  }
+  
+  // Zone distribution chart (12 weeks)
+  const cutoff12=new Date();cutoff12.setDate(cutoff12.getDate()-84);
+  const rides12=aCache.filter(a=>new Date(a.start_date_local)>=cutoff12&&a.average_watts);
+  const zoneDist={z1:0,z2:0,z3:0,z4:0,z5:0,z6:0};
+  rides12.forEach(a=>{
+    const np=a.icu_weighted_avg_watts||a.average_watts;
+    const pct=Math.round(np/FTP*100);
+    const dur=a.moving_time;
+    if(pct>=105)zoneDist.z6+=dur;
+    else if(pct>=94)zoneDist.z5+=dur;
+    else if(pct>=88)zoneDist.z4+=dur;
+    else if(pct>=76)zoneDist.z3+=dur;
+    else if(pct>=56)zoneDist.z2+=dur;
+    else zoneDist.z1+=dur;
+  });
+  
+  mkChart('careerZoneChart','bar',['Z1','Z2','Z3','Z4','Z5','Z6'],[{
+    label:'Hours',
+    data:[zoneDist.z1,zoneDist.z2,zoneDist.z3,zoneDist.z4,zoneDist.z5,zoneDist.z6].map(s=>Math.round(s/3600*10)/10),
+    backgroundColor:['#3b82f6','#22c55e','#f59e0b','#f97316','#E01A22','#8b5cf6'],
+    borderRadius:4
+  }],{legend:{display:false}});
+  
+  // Training plan progress
+  const raceDate=new Date('2026-07-06');
+  const weeksToRace=Math.ceil((raceDate-new Date())/86400000/7);
+  const weekNum=Math.max(1,13-weeksToRace);
+  document.getElementById('car-plan-week').textContent=weekNum;
+  document.getElementById('car-plan-progress').style.width=(weekNum/12*100)+'%';
+  
+  // Event countdowns
+  document.getElementById('car-vp-days').textContent=Math.ceil((new Date('2026-07-06')-new Date())/86400000);
+  document.getElementById('car-mg-days').textContent=Math.ceil((new Date('2026-08-01')-new Date())/86400000);
+}
+
 function setFitness(ctl,atl,tsb){
   if(ctl) document.getElementById('ctl').textContent=ctl;
   if(atl) document.getElementById('atl').textContent=atl;
@@ -542,6 +767,7 @@ async function loadAll(){
       loadActivities().catch(e=>{console.error('Activities:',e);return null;})
     ]);
     buildSeasonOverview();
+    buildCareerPage();
 
     if(!w && !a){
       showApiError('API error — is server.py running?');
@@ -747,9 +973,10 @@ function alog(msg,cls){const el=document.getElementById('plog');el.style.display
 
 // ── TAB NAV ────────────────────────────────────────────────────────────
 function showTab(tab){
-  document.querySelectorAll('.navtab').forEach((t,i)=>t.classList.toggle('active',['dash','builder','chat'][i]===tab));
+  document.querySelectorAll('.navtab').forEach((t,i)=>t.classList.toggle('active',['dash','career','builder','chat'][i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
+  if(tab==='career')buildCareerPage();
 }
 
 // ── DEBUG ──────────────────────────────────────────────────────────────
