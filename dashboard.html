@@ -407,27 +407,33 @@ canvas{display:block;width:100%!important}
 <div class="page" id="page-chat">
   <div class="sec-hdr" style="margin-bottom:12px">
     <div class="sec-title">AI Coach</div>
-    <span style="font-size:12px;color:var(--txt3)">Context from intervals.icu included automatically</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn" style="background:var(--red);border:none;color:#fff;font-weight:700" onclick="planMyWeek()">🗓 Plan My Week</button>
+      <span style="font-size:11px;color:var(--txt3)">Full year data included</span>
+    </div>
   </div>
 
   <div class="chat-wrap">
     <div class="quick-btns">
-      <button class="btn" onclick="quickQ('What should I focus on today based on my training load?')">Today's focus</button>
-      <button class="btn" onclick="quickQ('Analyse my current week training load and intensity distribution')">Week analysis</button>
-      <button class="btn" onclick="quickQ('Am I on track for VeloPeak 500 on July 6?')">Race readiness</button>
-      <button class="btn" onclick="quickQ('What are my biggest training gaps right now?')">Training gaps</button>
-      <button class="btn" onclick="quickQ('Design a sweetspot session for me to do today')">Build session</button>
-      <button class="btn" onclick="quickQ('How can I improve my Zone 2 aerobic base?')">Zone 2 tips</button>
+      <button class="btn" onclick="quickQ(`What should I do today? My current CTL is ${document.getElementById('ctl').textContent}, ATL is ${document.getElementById('atl').textContent}, TSB is ${document.getElementById('tsb').textContent}. Give me a specific recommendation.`)">Today's recommendation</button>
+      <button class="btn" onclick="quickQ('Analyse my last 7 days of training in detail — TSS, intensity distribution, compliance, what went well and what to adjust.')">Last 7 days analysis</button>
+      <button class="btn" onclick="quickQ('Am I on track for VeloPeak 500 on July 6? Assess my current fitness trajectory and what needs to happen in the next 4 weeks.')">Race readiness</button>
+      <button class="btn" onclick="quickQ('Do a full recovery check. Ask me about my sleep, muscle soreness, motivation, HRV if I have it, and then tell me if I should train hard, easy, or rest today.')">Recovery check</button>
+      <button class="btn" onclick="quickQ('What are my current biggest limiters for a 80km road race? Be specific about what physiological gaps need addressing most urgently.')">Training limiters</button>
+      <button class="btn" onclick="quickQ('Design a complete sweetspot session for me right now with exact watt targets, duration, and step-by-step instructions I can follow on the bike.')">Build a session</button>
+      <button class="btn" onclick="quickQ('Analyse my Zone 2 aerobic efficiency. Is my aerobic decoupling improving? What should my Z2 power and HR targets be this week?')">Z2 efficiency check</button>
+      <button class="btn" onclick="quickQ('I just finished a hard ride. Ask me what data I have from it (watts, HR, how I felt) and then analyse my execution.')">Post-ride analysis</button>
     </div>
 
     <div class="chat-msgs" id="chat-msgs">
-      <div style="text-align:center;color:var(--txt3);font-size:12px;padding:30px">
-        Ask your coach anything. Your training data is loaded automatically.
+      <div style="text-align:center;color:var(--txt3);font-size:12px;padding:40px 20px">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--txt2);margin-bottom:8px">Your AI Coach is ready</div>
+        <div>Full year of training data loaded. Ask anything or use the quick buttons above.</div>
       </div>
     </div>
 
     <div class="chat-input-row">
-      <input class="chat-input" id="chat-input" type="text" placeholder="Ask your coach..."
+      <input class="chat-input" id="chat-input" type="text" placeholder="Ask your coach anything..."
         onkeydown="if(event.key==='Enter')sendChat()"
         onfocus="this.style.borderColor='var(--red)'"
         onblur="this.style.borderColor='var(--border2)'">
@@ -1311,47 +1317,183 @@ function buildContext(){
   const wktss=document.getElementById('wktss')?.textContent||'--';
   const vp=Math.ceil((new Date('2026-07-06')-new Date())/86400000);
   const mg=Math.ceil((new Date('2026-08-01')-new Date())/86400000);
-  const DAYS_ALL=['MON','TUE','WED','THU','FRI','SAT','SUN'];
-  const weekPlan=DAYS_ALL.map(d=>{
-    if(typeof DS==='undefined')return'';
+
+  // Current week plan
+  const weekPlan=['MON','TUE','WED','THU','FRI','SAT','SUN'].map(d=>{
     const st=DS[d];if(!st||!st.on||st.s==='rest')return`${d}: Rest`;
-    const s=SESS[st.s];return s?`${d}: ${s.label} (${s.tss} TSS, ${s.mins}min)`:`${d}: ${st.s}`;
-  }).join(', ');
+    const s=SESS[st.s];return s?`${d}: ${s.label} (${s.tss}TSS, ${s.mins}min)`:`${d}: ${st.s}`;
+  }).join('\n');
 
-  return`You are an AI cycling coach for Augustinas Matusevičius. Be direct, specific, data-driven. Concise and actionable.
+  // Last 14 rides detailed
+  let recentRides='';
+  if(aCache&&aCache.length){
+    const rides=aCache.filter(a=>a.icu_training_load>0).slice(0,14);
+    recentRides=rides.map(a=>{
+      const np=Math.round(a.icu_weighted_avg_watts||0);
+      const IF=np?Math.round(np/FTP*100):0;
+      const hr=Math.round(a.average_heartrate||0);
+      const cad=Math.round(a.average_cadence||0);
+      const dur=Math.round((a.moving_time||0)/60);
+      const tss=Math.round(a.icu_training_load||0);
+      return `${a.start_date_local?.slice(0,10)} | ${a.name||'Ride'} | ${dur}min | ${tss}TSS${np?` | NP:${np}W IF:${IF}%`:''}${hr?` | HR:${hr}bpm`:''}${cad?` | Cad:${cad}rpm`:''}`;
+    }).join('\n');
+  }
 
-ATHLETE PROFILE:
-- Age: 24, Height: 187cm, Weight: ~98kg, Target: 90kg
-- Background: 6-year national team rower (2016-2021), peak lactate 19mmol/l, 200kg squat
-- FTP: 337W | Z2: ${Z2LO}-${Z2HI}W | Sweetspot: ${SSLO}-${SSHI}W | Threshold: ${THLO}-${THHI}W
-- Max HR: 192bpm | Trains outdoors only, 5x/week | Physiotherapist by profession
-- Bikes: Trek Madone SLR 6 (primary), FOCUS CAYO, Giant Revolt (gravel)
+  // Weekly TSS last 12 weeks
+  let weeklyTSS='';
+  if(aCache&&aCache.length){
+    const wm={};
+    aCache.forEach(a=>{
+      const dt=new Date(a.start_date_local);
+      const off=(dt.getDay()+6)%7;
+      const wk=new Date(dt);wk.setDate(dt.getDate()-off);
+      const k=wk.toISOString().slice(0,10);
+      wm[k]=(wm[k]||0)+(a.icu_training_load||0);
+    });
+    weeklyTSS=Object.entries(wm).sort((a,b)=>a[0]<b[0]?1:-1).slice(0,12)
+      .map(([w,t])=>`${w}: ${Math.round(t)} TSS`).join('\n');
+  }
 
-TRAINING STATUS:
-- Fitness CTL: ${ctl} | Fatigue ATL: ${atl} | Form TSB: ${tsb}
-- This week TSS: ${wktss}
+  // Zone distribution last 12 weeks
+  let zoneDist='';
+  if(aCache&&aCache.length){
+    const cutoff=new Date();cutoff.setDate(cutoff.getDate()-84);
+    const rides=aCache.filter(a=>new Date(a.start_date_local)>=cutoff&&a.icu_training_load>0);
+    const zh={z1:0,z2:0,z3:0,z4:0,z5:0,z6:0};
+    rides.forEach(a=>{
+      const np=a.icu_weighted_avg_watts||a.average_watts||0;
+      const dur=(a.moving_time||0)/3600;
+      let pct=np>0?np/FTP*100:0;
+      if(!pct&&a.icu_training_load>0)pct=Math.sqrt(a.icu_training_load/((a.moving_time/3600)*100))*100;
+      if(pct>=105)zh.z6+=dur;
+      else if(pct>=94)zh.z5+=dur;
+      else if(pct>=88)zh.z4+=dur;
+      else if(pct>=76)zh.z3+=dur;
+      else if(pct>=56)zh.z2+=dur;
+      else zh.z1+=dur;
+    });
+    const tot=Object.values(zh).reduce((a,b)=>a+b,0)||1;
+    zoneDist=`Z1 Recovery: ${zh.z1.toFixed(1)}h (${Math.round(zh.z1/tot*100)}%)\nZ2 Endurance: ${zh.z2.toFixed(1)}h (${Math.round(zh.z2/tot*100)}%)\nZ3 Tempo: ${zh.z3.toFixed(1)}h (${Math.round(zh.z3/tot*100)}%)\nZ4 Sweet Spot: ${zh.z4.toFixed(1)}h (${Math.round(zh.z4/tot*100)}%)\nZ5 Threshold: ${zh.z5.toFixed(1)}h (${Math.round(zh.z5/tot*100)}%)\nZ6 VO2+: ${zh.z6.toFixed(1)}h (${Math.round(zh.z6/tot*100)}%)`;
+  }
 
-TARGET RACES:
-- VeloPeak 500 (80km road): ${vp} days away (July 6, 2026)
-- Megre Gravel (100km): ${mg} days away (August 1, 2026)
-- Terrain: Rolling Lithuanian roads, hills max 2-3min
+  // Total year stats
+  let yearStats='';
+  if(aCache&&aCache.length){
+    const totalTSS=aCache.reduce((s,a)=>s+(a.icu_training_load||0),0);
+    const totalHrs=aCache.reduce((s,a)=>s+(a.moving_time||0),0)/3600;
+    const totalRides=aCache.filter(a=>a.icu_training_load>0).length;
+    yearStats=`Total rides (365d): ${totalRides}\nTotal TSS (365d): ${Math.round(totalTSS)}\nTotal hours (365d): ${totalHrs.toFixed(1)}h\nAvg TSS/week: ${Math.round(totalTSS/52)}`;
+  }
 
-CURRENT WEEK PLAN:
+  return`You are an expert cycling coach for Augustinas Matusevičius. Your coaching philosophy is evidence-based, data-driven, and grounded in exercise physiology (similar to Barbell Medicine, Joe Friel, and polarized training principles). Be direct, specific, and always give actionable watt targets.
+
+═══ ATHLETE PROFILE ═══
+Name: Augustinas Matusevičius, Age: 24
+Height: 187cm, Weight: ~98kg (target: 90kg — body composition matters for w/kg)
+Background: 6-year Lithuanian national team rower (2016-2021), peak blood lactate 19mmol/l, 200kg squat at peak — exceptional power base but cycling-specific adaptations are still developing
+Profession: Physiotherapist (understands anatomy, injury mechanisms, recovery science)
+FTP: 337W (may be slightly higher — needs ramp test)
+Bikes: Trek Madone SLR 6 (primary road), FOCUS CAYO (training), Giant Revolt (gravel)
+Trains outdoors only, 5×/week typical
+
+POWER ZONES (FTP 337W):
+Z1 Recovery: <169W
+Z2 Endurance: ${Z2LO}–${Z2HI}W (HR 130–148bpm)
+Z3 Tempo: ${Math.round(FTP*.76)}–${Math.round(FTP*.87)}W
+Z4 Sweet Spot: ${SSLO}–${SSHI}W
+Z5 Threshold: ${THLO}–${THHI}W
+Z6 VO2 Max: >${Math.round(FTP*1.06)}W
+
+KNOWN LIMITERS:
+- Aerobic decoupling too high (5.9% — target <5%): riding Z2 too hard
+- Cadence suboptimal (target 88–95rpm consistently)
+- Tempo zone underdeveloped — weakest zone
+- Lower back erectors: muscular soreness after 2h+ hard efforts (not structural)
+- Tends to ride too hard on easy days (classic amateur mistake)
+- Body weight: 98kg vs target 90kg — each kg lost = ~0.08 W/kg gain at FTP
+
+═══ CURRENT TRAINING STATUS ═══
+Fitness CTL: ${ctl}
+Fatigue ATL: ${atl}
+Form TSB: ${tsb}
+This week TSS so far: ${wktss}
+
+═══ TARGET RACES ═══
+VeloPeak 500 (80km road): ${vp} days away — July 6, 2026
+Megre Gravel (100km): ${mg} days away — August 1, 2026
+Terrain: Rolling Lithuanian roads, climbs 2–3min max, puncheur-style
+
+═══ CURRENT WEEK PLAN ═══
 ${weekPlan}
 
-TRAINING GAPS:
-- Tempo: 1.8/10 (weakest — needs most work)
-- Sweetspot: 3.0/10
-- VO2Max: 4.3/10 (strongest — rowing background)
-- Aerobic decoupling: 5.9% (target under 5%)
-- Optimal cadence: 88-95rpm (currently riding too slow)
+═══ LAST 14 RIDES ═══
+${recentRides||'No ride data loaded yet'}
 
-KNOWN ISSUES:
-- Lower back erector soreness after 2h+ hard rides (muscular, not structural)
-- Tends to ride too hard on easy days
-- FTP may be slightly higher than 337W — proper test needed
+═══ WEEKLY TSS TREND (last 12 weeks, newest first) ═══
+${weeklyTSS||'No data'}
 
-Respond in a direct coaching tone. Use watt targets. Be practical.`;
+═══ ZONE DISTRIBUTION (last 12 weeks) ═══
+${zoneDist||'No data'}
+
+═══ ANNUAL STATS ═══
+${yearStats||'No data'}
+
+═══ COACHING INSTRUCTIONS ═══
+1. Always reference actual data from above when answering — never give generic advice
+2. Give specific watt targets, not just zone names
+3. When asked about recovery, probe with questions: sleep quality (1–10), muscle soreness location/severity, motivation, any illness
+4. When suggesting sessions, provide the full structure (warmup → intervals → cooldown) with exact watts
+5. For "Plan My Week" requests, return a JSON block at the end in this exact format:
+   WEEKPLAN:{"MON":"z2_90","TUE":"ss_2x20","WED":"rest","THU":"tempo_3x15","FRI":"z2_120","SAT":"long_z2","SUN":"rest"}
+   Available session keys: rest, z2_90, z2_120, tempo_3x15, ss_3x15, ss_2x20, long_z2, long_ss, threshold_2x12, gym_cycling
+6. Be honest about limitations — if TSB is very negative, say so and adjust recommendations
+7. Ask about subjective fatigue, not just numbers
+8. Reference the specific races and countdown when relevant`;
+}
+
+// ── MARKDOWN RENDERER ─────────────────────────────────────────────────
+function renderMd(text){
+  return text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/^### (.*)/gm,'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.08em;margin:12px 0 4px">$1</div>')
+    .replace(/^## (.*)/gm,'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:800;color:#fff;margin:14px 0 6px">$1</div>')
+    .replace(/^- (.*)/gm,'<div style="display:flex;gap:6px;margin:3px 0"><span style="color:var(--red);flex-shrink:0">•</span><span>$1</span></div>')
+    .replace(/`([^`]+)`/g,'<code style="background:var(--bg4);padding:1px 6px;border-radius:3px;font-size:11px;color:var(--green)">$1</code>')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+}
+
+// ── PLAN MY WEEK ──────────────────────────────────────────────────────
+async function planMyWeek(){
+  showTab('chat');
+  const prompt=`Plan my training week. Based on all my data — current CTL/ATL/TSB, recent rides, zone distribution, training gaps, and race countdown — give me an optimal 7-day training plan.
+
+For each day explain briefly WHY you chose that session. Then at the very end, include the machine-readable plan in this exact format so I can auto-load it:
+WEEKPLAN:{"MON":"...","TUE":"...","WED":"...","THU":"...","FRI":"...","SAT":"...","SUN":"..."}`;
+
+  document.getElementById('chat-input').value=prompt;
+  await sendChat();
+}
+
+function tryParsePlan(text){
+  const match=text.match(/WEEKPLAN:(\{[^}]+\})/);
+  if(!match)return;
+  try{
+    const plan=JSON.parse(match[1]);
+    const valid=Object.keys(SESS);
+    let applied=0;
+    ['MON','TUE','WED','THU','FRI','SAT','SUN'].forEach(d=>{
+      if(plan[d]&&valid.includes(plan[d])){
+        DS[d]={on:plan[d]!=='rest',s:plan[d]};
+        applied++;
+      }
+    });
+    if(applied>0){
+      buildCards();
+      addMessage('coach',`✅ Week plan loaded into Workout Builder (${applied} days). Switch to the Workout Builder tab to review and push individual sessions to Intervals.icu.`);
+    }
+  }catch(e){}
 }
 
 function addMessage(role,text){
@@ -1359,24 +1501,23 @@ function addMessage(role,text){
   const isUser=role==='user';
   const div=document.createElement('div');
   div.className=isUser?'msg-user':'msg-coach';
+  const rendered=isUser?text:renderMd(text);
   div.innerHTML=`
     <div class="msg-avatar ${isUser?'u':'c'}">${isUser?'A':'C'}</div>
-    <div class="msg-bubble ${isUser?'u':'c'}">${text}</div>`;
+    <div class="msg-bubble ${isUser?'u':'c'}" style="${isUser?'':'white-space:normal'}">${rendered}</div>`;
   msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
 }
 
 function addTyping(){
   const msgs=document.getElementById('chat-msgs');
   const div=document.createElement('div');div.id='typing';div.className='msg-coach';
-  div.innerHTML=`
-    <div class="msg-avatar c">C</div>
+  div.innerHTML=`<div class="msg-avatar c">C</div>
     <div class="msg-bubble c" style="padding:12px 16px">
       <div style="display:flex;gap:5px;align-items:center">
         <div class="dot" style="width:7px;height:7px;background:var(--red)"></div>
         <div class="dot" style="width:7px;height:7px;background:var(--red)"></div>
         <div class="dot" style="width:7px;height:7px;background:var(--red)"></div>
-      </div>
-    </div>`;
+      </div></div>`;
   msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
 }
 
@@ -1391,21 +1532,29 @@ async function sendChat(){
     const res=await fetch('/claude',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,system:buildContext(),messages:chatHistory})
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:1500,
+        system:buildContext(),
+        messages:chatHistory
+      })
     });
     document.getElementById('typing')?.remove();
     if(!res.ok){
       const err=await res.json().catch(()=>({}));
-      addMessage('coach','Error '+(res.status)+': '+(err.error?.message||'Check server logs.'));
+      addMessage('coach',`Error ${res.status}: ${err.error?.message||'Check server logs.'}`);
       return;
     }
     const data=await res.json();
     const reply=data.content?.[0]?.text||'No response.';
-    addMessage('coach',reply);chatHistory.push({role:'assistant',content:reply});
-    if(chatHistory.length>20)chatHistory=chatHistory.slice(-20);
+    addMessage('coach',reply);
+    chatHistory.push({role:'assistant',content:reply});
+    if(chatHistory.length>24)chatHistory=chatHistory.slice(-24);
+    // Auto-parse week plan if present
+    if(reply.includes('WEEKPLAN:'))tryParsePlan(reply);
   }catch(e){
     document.getElementById('typing')?.remove();
-    addMessage('coach','Network error: '+e.message);
+    addMessage('coach',`Network error: ${e.message}`);
   }
 }
 
