@@ -125,6 +125,13 @@ body{font-family:'Barlow',sans-serif;font-size:14px;background:var(--bg);color:v
 /* ── SECTION HEADER ──────────────────────────────────────────────────── */
 .sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .sec-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#fff;letter-spacing:.04em;text-transform:uppercase}
+/* ── SESSION PICKER ─────────────────────────────────────────────────── */
+.cat-btn{background:var(--bg4);border:1px solid var(--border);color:var(--txt3);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;letter-spacing:.04em;transition:all .15s}
+.cat-btn.active{background:var(--red);border-color:var(--red);color:#fff}
+.cat-btn:hover:not(.active){border-color:var(--border2);color:var(--txt)}
+.dur-btn{background:var(--bg4);border:1px solid var(--border);color:var(--txt3);padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s}
+.dur-btn.active{background:var(--bg3);border-color:var(--border2);color:#fff}
+.dur-btn:hover:not(.active){border-color:var(--border2);color:var(--txt)}
 canvas{display:block;width:100%!important}
 /* ── DBG ─────────────────────────────────────────────────────────────── */
 #dbg{display:none;position:fixed;top:0;right:0;width:420px;height:100vh;background:var(--bg2);border-left:1px solid var(--border);padding:16px;overflow-y:auto;z-index:999}
@@ -386,14 +393,59 @@ canvas{display:block;width:100%!important}
   </div>
 </div>
 
-<!-- ══ WORKOUT LIBRARY MODAL ══════════════════════════════════════════ -->
-<div id="lib-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;overflow-y:auto">
-  <div style="max-width:700px;margin:40px auto;padding:0 16px 60px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:#fff;letter-spacing:.06em">WORKOUT LIBRARY</div>
-      <button onclick="closeLibrary()" style="background:var(--bg4);border:1px solid var(--border2);color:var(--txt2);padding:6px 14px;border-radius:5px;cursor:pointer;font-family:'Barlow',sans-serif;font-size:13px">✕ Close</button>
+<!-- ══ SESSION PICKER MODAL ════════════════════════════════════════════ -->
+<div id="lib-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:200;overflow-y:auto">
+  <div style="max-width:740px;margin:30px auto;padding:0 16px 60px">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:.06em">SESSION LIBRARY</div>
+        <div id="lib-day-label" style="font-size:11px;color:var(--txt3);margin-top:2px"></div>
+      </div>
+      <button onclick="closeLibrary()" style="background:var(--bg4);border:1px solid var(--border2);color:var(--txt2);padding:7px 16px;border-radius:5px;cursor:pointer;font-family:'Barlow',sans-serif;font-size:13px">✕ Close</button>
     </div>
-    <div id="lib-content"></div>
+
+    <!-- Search -->
+    <input id="lib-search" type="text" placeholder="🔍  Search sessions..."
+      oninput="filterLibrary()"
+      style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:7px;padding:10px 14px;font-size:13px;color:var(--txt);font-family:'Barlow',sans-serif;outline:none;margin-bottom:12px">
+
+    <!-- Category tabs -->
+    <div id="lib-cats" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="cat-btn active" onclick="setCat('All')">All</button>
+      <button class="cat-btn" onclick="setCat('Activation')">⚡ Activation</button>
+      <button class="cat-btn" onclick="setCat('Endurance')">🟢 Endurance</button>
+      <button class="cat-btn" onclick="setCat('Tempo')">🟡 Tempo</button>
+      <button class="cat-btn" onclick="setCat('Sweet Spot')">🟠 Sweet Spot</button>
+      <button class="cat-btn" onclick="setCat('Threshold')">🔴 Threshold</button>
+      <button class="cat-btn" onclick="setCat('VO2 Max')">🟣 VO2 Max</button>
+      <button class="cat-btn" onclick="setCat('Anaerobic')">💥 Anaerobic</button>
+      <button class="cat-btn" onclick="setCat('Gym')">🏋 Gym</button>
+    </div>
+
+    <!-- Duration filter -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--txt3);font-weight:600;text-transform:uppercase;letter-spacing:.08em">Duration:</span>
+      <div id="lib-durs" style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="dur-btn active" onclick="setDur(0)">Any</button>
+        <button class="dur-btn" onclick="setDur(30)">30</button>
+        <button class="dur-btn" onclick="setDur(45)">45</button>
+        <button class="dur-btn" onclick="setDur(60)">60</button>
+        <button class="dur-btn" onclick="setDur(75)">75</button>
+        <button class="dur-btn" onclick="setDur(90)">90</button>
+        <button class="dur-btn" onclick="setDur(105)">105</button>
+        <button class="dur-btn" onclick="setDur(120)">120</button>
+        <button class="dur-btn" onclick="setDur(150)">150+</button>
+      </div>
+      <span style="font-size:10px;color:var(--txt3)">min</span>
+    </div>
+
+    <!-- Results count -->
+    <div id="lib-count" style="font-size:11px;color:var(--txt3);margin-bottom:10px"></div>
+
+    <!-- Session cards grid -->
+    <div id="lib-content" style="display:flex;flex-direction:column;gap:6px"></div>
   </div>
 </div>
 
@@ -826,412 +878,450 @@ async function loadAll(){
     document.getElementById('lupd').textContent='Updated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
   }catch(e){
     showApiError('Error — '+e.message);
-    console.error(e);
-  }
-}
-
-// ── SESSION LIBRARY — 20 sessions, tight watt windows ─────────────────
-// FTP 337W exact targets:
-// Z2: 189–219W | Tempo-lo: 256–270W | Tempo-hi: 270–287W
-// SS-lo: 297–307W | SS-hi: 307–317W | Thresh: 320–337W | Thresh+: 337–354W
-// VO2: 371–388W | Anaerobic: 421–490W | Sprint: 500W+
-// ── SESSION LIBRARY ────────────────────────────────────────────────────
-// FTP 337W | All sessions: 20min city-exit warmup + work + 10min cooldown
-// Watt windows max 10W. Durations: 60/75/90/105/120min.
-// Z2:189-219W | Tempo:256-287W | SS:297-317W | Thresh:320-354W | VO2:364-404W | AC:421-490W
+// ── SESSION LIBRARY ─────────────────────────────────────────────────────
+// FTP 337W | 20min city-exit warmup in every session | max 10W intervals
 const SESS={
-
   rest:{label:'Rest Day',cat:'Rest',color:'#505060',bg:'transparent',tss:0,mins:0,type:'Rest',
     desc:'Complete rest.',goal:'Sleep, eat, hydrate. No training.',steps:[]},
 
-  // ═══ ZONE 2 ENDURANCE ════════════════════════════════════════════════
-  z2_60:{label:'Z2 — 60min',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:35,mins:60,type:'Ride',
-    desc:'60min | 20min city exit warmup → 30min at 196–206W → 10min cooldown.',
-    goal:'Active recovery and minimal aerobic maintenance. Short session for busy days or post-hard-day movement.',
+  // ═══ ACTIVATION / PRE-COMPETITION ════════════════════════════════════
+  activation_30:{label:'Pre-Race Activation — 30min',cat:'Activation',color:'#06b6d4',bg:'rgba(6,182,212,.1)',tss:20,mins:30,type:'Ride',
+    desc:'30min | Easy spin + 4×10sec openers. Day-before or morning-of race activation.',
+    goal:'Prime neuromuscular system without accumulating fatigue. Openers flush dead legs and wake up fast-twitch recruitment before racing.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'20min riding out of the city. Progressive build from 160W. Keep HR below 135bpm. No surges at traffic lights. Reach open road before starting main set.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — you are out of the city, start Zone 2'},
-      {type:'work',label:'Zone 2',dur:30,watts:'196–206W',text:'30min at 196–206W. HR 130–142bpm. Cadence 90–95rpm. Steady, not drifting higher.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy spin back into the city.'}]},
+      {type:'warmup',label:'Easy Spin',dur:20,watts:'160–189W',text:'20min very easy spin. HR under 130bpm. This is NOT a workout — it is just waking the body up. Cadence 90–95rpm.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP for openers'},
+      {type:'work',label:'Openers — 4×10sec',dur:4,watts:'440–480W',text:'4×10sec hard accelerations with 90sec easy between. Seated start, accelerate through. Not max sprint — controlled acceleration to open up the legs.'},
+      {type:'cooldown',label:'Easy Spin Out',dur:6,watts:'155W',text:'Easy 6min. Go to race now.'}]},
+
+  activation_45:{label:'Pre-Race Activation — 45min',cat:'Activation',color:'#06b6d4',bg:'rgba(6,182,212,.1)',tss:30,mins:45,type:'Ride',
+    desc:'45min | 20min easy + 6×20sec race-pace openers + 10min easy. Standard race-day warmup.',
+    goal:'Full race-day activation. Six openers at race intensity clear lactate pathways and prime cardiovascular response without creating fatigue.',
+    steps:[
+      {type:'warmup',label:'City Spin Out',dur:20,watts:'160–196W',text:'Easy 20min build to 196W. HR under 135bpm. No surges. Just getting blood moving.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start openers block'},
+      {type:'work',label:'Race Openers — 6×20sec',dur:8,watts:'404–440W',text:'6×20sec hard openers at 404–440W (120–130% FTP). 60sec easy between each. These should feel sharp and crisp, not like all-out efforts. Cadence 95–105rpm. Last opener: slightly harder.'},
+      {type:'cooldown',label:'Easy Wind Down',dur:10,watts:'155–175W',text:'10min easy. HR comes down. Legs should feel awake but not tired. Race time.'}]},
+
+  activation_60:{label:'Pre-Race Activation — 60min',cat:'Activation',color:'#06b6d4',bg:'rgba(6,182,212,.1)',tss:42,mins:60,type:'Ride',
+    desc:'60min | 20min easy + 10min build + openers + 10min easy. For big race days.',
+    goal:'Extended race activation for important events. Includes a sweet spot primer to ensure cardiovascular system is fully engaged before the start gun.',
+    steps:[
+      {type:'warmup',label:'City Spin Out',dur:20,watts:'160–196W',text:'Easy 20min city exit. Keep HR under 130bpm. Patience.'},
+      {type:'work',label:'Progressive Build',dur:10,watts:'196–297W',text:'10min progressive build from Z2 up to sweet spot. By minute 10 you should be at 290W briefly. This primes the aerobic system.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP for openers'},
+      {type:'work',label:'Race Openers — 4×30sec',dur:6,watts:'404–450W',text:'4×30sec at 404–450W (120–133% FTP). 90sec easy between. Sharp and powerful. Last effort: max 15sec acceleration at end.'},
+      {type:'cooldown',label:'Easy Wind Down',dur:14,watts:'155–175W',text:'14min easy. HR fully settles. Arrive at start line alert, not tired.'}]},
+
+  activation_dawdle:{label:'Day Before Race — Easy 45min',cat:'Activation',color:'#06b6d4',bg:'rgba(6,182,212,.1)',tss:18,mins:45,type:'Ride',
+    desc:'45min | Super easy day-before spin + 3 sharp 10sec strides. Preserve freshness.',
+    goal:'Keep legs moving without adding fatigue. Day-before rides should feel almost embarrassingly easy. Three quick strides remind the neuromuscular system what fast feels like.',
+    steps:[
+      {type:'warmup',label:'Easy Spin',dur:40,watts:'155–189W',text:'40min super easy. HR under 128bpm. Cadence 90–95rpm. Talk on the phone level of easy. If HR goes above 135bpm, back off. This is NOT a training session.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP for strides'},
+      {type:'work',label:'Strides — 3×10sec',dur:5,watts:'440–480W',text:'3×10sec sharp accelerations. 90sec full recovery between. Just reminding the legs they know how to go fast tomorrow.'}]},
+
+  // ═══ ZONE 2 ENDURANCE ═════════════════════════════════════════════════
+  z2_45:{label:'Z2 — 45min',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:26,mins:45,type:'Ride',
+    desc:'45min | 20min city exit → 15min at 196–206W → 10min return. Recovery spin.',
+    goal:'Minimum dose active recovery. Just moving the blood when you have 45 minutes.',
+    steps:[
+      {type:'warmup',label:'City Exit',dur:20,watts:'160–196W',text:'Easy 20min city exit at 160–196W.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Zone 2 starts'},
+      {type:'work',label:'Zone 2',dur:15,watts:'196–206W',text:'15min at 196–206W. HR under 142bpm. Easy spin.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min back.'}]},
+
+  z2_60:{label:'Z2 — 60min',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:35,mins:60,type:'Ride',
+    desc:'60min | 20min city exit → 30min at 196–206W → 10min return.',
+    goal:'Short aerobic maintenance. Active recovery or busy-day option.',
+    steps:[
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'Easy 20min city exit build.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Zone 2 begins'},
+      {type:'work',label:'Zone 2',dur:30,watts:'196–206W',text:'Hold 196–206W. HR under 142bpm. Cadence 90–95rpm.'},
+      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
   z2_75:{label:'Z2 — 75min',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:48,mins:75,type:'Ride',
-    desc:'75min | 20min city exit → 45min at 196–210W → 10min cooldown.',
-    goal:'Solid aerobic session for mid-week. 45min quality Z2 is enough to drive meaningful adaptation.',
+    desc:'75min | 20min city exit → 45min at 196–210W → 10min return.',
+    goal:'Solid mid-week aerobic session. 45min of quality Z2 drives meaningful mitochondrial adaptation.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'20min city exit. Build progressively. Reach open road before LAP press.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — on the open road, start Zone 2'},
-      {type:'work',label:'Zone 2',dur:45,watts:'196–210W',text:'45min at 196–210W. HR 130–145bpm. Cadence 90–95rpm. If HR drifts above 148bpm on climbs, soft-pedal back down.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy back into city.'}]},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'Easy 20min progressive city exit.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Zone 2 begins'},
+      {type:'work',label:'Zone 2',dur:45,watts:'196–210W',text:'196–210W. HR 130–145bpm. Cadence 90–95rpm. If HR exceeds 148bpm on climbs, soft-pedal.'},
+      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
   z2_90:{label:'Z2 — 90min',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:60,mins:90,type:'Ride',
-    desc:'90min | 20min city exit → 60min at 196–213W → 10min cooldown.',
-    goal:'Core aerobic base session. 60min in Z2 is the sweet spot for mitochondrial stimulus without significant fatigue accumulation.',
+    desc:'90min | 20min city exit → 60min at 196–213W → 10min return.',
+    goal:'Core aerobic base session. 60min in Z2 is the sweet spot for mitochondrial stimulus without fatigue accumulation.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'20min progressive city exit. Build from 160W, reach 196W by the time you hit open road.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — open road reached, starting Zone 2'},
-      {type:'work',label:'Zone 2',dur:60,watts:'196–213W',text:'60min at 196–213W. HR 130–148bpm. Cadence 90–95rpm. Eat at 30min. Hills: stand or drop power, do not push HR above 150bpm.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy.'}]},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'Easy 20min progressive build.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Zone 2 begins'},
+      {type:'work',label:'Zone 2',dur:60,watts:'196–213W',text:'196–213W. HR 130–148bpm. Cadence 90–95rpm. Eat at 30min. Hills: reduce power, not increase effort.'},
+      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
   z2_105:{label:'Z2 — 105min',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:78,mins:105,type:'Ride',
-    desc:'105min | 20min city exit → 75min at 196–216W → 10min cooldown.',
-    goal:'Strong aerobic stimulus. 75min of continuous Z2 significantly develops aerobic enzyme activity and fat oxidation capacity.',
+    desc:'105min | 20min city exit → 75min at 196–216W → 10min return.',
+    goal:'Strong aerobic stimulus. 75min continuous Z2 develops aerobic enzyme activity and fat oxidation.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'20min city exit. Patience — no surging.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — open road, start Zone 2'},
-      {type:'work',label:'Zone 2',dur:75,watts:'196–216W',text:'75min at 196–216W. HR 130–148bpm. Eat at 30 and 60min. On any climb longer than 2min, drop power to hold HR below 148bpm.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy.'}]},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'Easy 20min.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Zone 2 begins'},
+      {type:'work',label:'Zone 2',dur:75,watts:'196–216W',text:'196–216W. HR 130–148bpm. Eat at 30 and 60min. Drop power on climbs.'},
+      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
   z2_120:{label:'Z2 — 120min',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:95,mins:120,type:'Ride',
-    desc:'120min | 20min city exit → 90min at 196–219W → 10min cooldown.',
-    goal:'Maximum mid-week aerobic session. 90min of Z2 is one of the strongest adaptations signals available without significant recovery cost.',
+    desc:'120min | 20min city exit → 90min at 196–219W → 10min return.',
+    goal:'Maximum mid-week aerobic session. 90min of Z2 drives strong aerobic base development.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'20min city exit. Easy build.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — on open road, Zone 2 begins'},
-      {type:'work',label:'Zone 2',dur:90,watts:'196–219W',text:'90min at 196–219W. HR 130–148bpm. Eat every 35min. Cadence 90–95rpm. This is a long effort — pace conservatively.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy.'}]},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'Easy 20min.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Zone 2 begins'},
+      {type:'work',label:'Zone 2',dur:90,watts:'196–219W',text:'196–219W. HR 130–148bpm. Eat every 35min. Drink every 15min.'},
+      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
-  z2_150:{label:'Long Z2 — 150min',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:118,mins:150,type:'Ride',
-    desc:'150min | 20min city exit → 120min at 196–219W → 10min cooldown.',
-    goal:'Maximum aerobic base stimulus. 2h of continuous Z2 drives the largest single-session aerobic adaptation. Weekend priority session.',
+  z2_150:{label:'Z2 Long — 150min',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:118,mins:150,type:'Ride',
+    desc:'150min | 20min city exit → 120min at 196–219W → 10min return. Weekend priority.',
+    goal:'Maximum aerobic base stimulus. 2h of continuous Z2 is the single largest aerobic adaptation session available.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'20min easy city exit.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — start 2h Zone 2 block'},
-      {type:'work',label:'Zone 2 — 2h',dur:120,watts:'196–219W',text:'120min at 196–219W. HR 130–148bpm strictly. Eat every 30min — this is 2+ hours. Drink every 15min. Drop to 189W if HR creeps above 150bpm.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy.'}]},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'Easy 20min.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Zone 2 begins'},
+      {type:'work',label:'Zone 2 — 2h',dur:120,watts:'196–219W',text:'196–219W. HR 130–148bpm strictly. Eat every 30min. Drop to 189W if HR drifts above 150bpm.'},
+      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
-  // ═══ CADENCE / NEUROMUSCULAR ═══════════════════════════════════════════
   cadence_75:{label:'Cadence Work — 75min',cat:'Endurance',color:'#22c55e',bg:'rgba(34,197,94,.08)',tss:42,mins:75,type:'Ride',
-    desc:'75min | Cadence pyramids 60–110rpm + 8×10sec max-cadence sprints. Fix pedaling efficiency.',
-    goal:'Your cadence is below optimal. Higher cadence (90–95rpm) reduces muscular fatigue and improves metabolic efficiency on long rides.',
+    desc:'75min | Cadence pyramids 60–110rpm + 8×10sec max-cadence bursts. Fix pedaling efficiency.',
+    goal:'Your cadence is below optimal. Higher cadence (90–95rpm) reduces muscular fatigue and improves metabolic efficiency.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'20min city exit. Cadence free during warmup.'},
-      {type:'work',label:'Cadence Pyramids',dur:21,watts:'196–210W',text:'Hold 196–210W and rotate cadence every 3min:\n3min at 60rpm\n3min at 70rpm\n3min at 80rpm\n3min at 90rpm (your target)\n3min at 100rpm\n3min at 110rpm\n3min back to 90rpm'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — max cadence burst block'},
-      {type:'work',label:'Max Cadence — 8×10sec',dur:14,watts:'~200W + max cadence',text:'8×10sec seated max cadence sprints. Target 120+ rpm. Keep power around 200W — this is cadence skill, not a power sprint. 90sec easy between each burst.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy city return. Focus on 90rpm naturally.'}]},
+      {type:'warmup',label:'City Exit',dur:20,watts:'160–196W',text:'Easy 20min city exit.'},
+      {type:'work',label:'Cadence Pyramids',dur:21,watts:'196–210W',text:'Rotate cadence every 3min:\n3min at 60rpm\n3min at 70rpm\n3min at 80rpm\n3min at 90rpm (target zone)\n3min at 100rpm\n3min at 110rpm\n3min back to 90rpm'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — max cadence bursts'},
+      {type:'work',label:'Max Cadence — 8×10sec',dur:14,watts:'~200W + max cadence',text:'8×10sec SEATED max cadence. Target 120+ rpm. Keep power ~200W. 90sec easy between.'},
+      {type:'work',label:'Z2 Finish',dur:10,watts:'196–210W',text:'10min Z2 at 90rpm naturally.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
-  // ═══ TEMPO ══════════════════════════════════════════════════════════════
+  // ═══ TEMPO ════════════════════════════════════════════════════════════
   tempo_60:{label:'Tempo — 60min',cat:'Tempo',color:'#f59e0b',bg:'rgba(245,158,11,.1)',tss:55,mins:60,type:'Ride',
-    desc:'60min | 20min city exit → 2×10min at 263–270W, 5min rest → 5min cooldown.',
-    goal:'Minimal effective dose of tempo training. 20min total tempo when time is short. Directly targets your weakest zone.',
+    desc:'60min | 20min city exit → 2×10min at 263–270W → cooldown.',
+    goal:'Minimum effective tempo dose. 20min total at 78–80% FTP when time is short.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–230W',text:'20min city exit. Build to 230W by the open road. Last 60sec: single 20sec surge at 270W to prime legs.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Tempo Interval 1'},
-      {type:'work',label:'Tempo 1 — 10min',dur:10,watts:'263–270W',text:'263–270W (78–80% FTP). Hard breathing but conversational. Cadence 88–92rpm. Tempo is distinctly EASIER than sweet spot — no lactate burn.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–240W',text:'20min build. Last 60sec: 1×20sec at 270W opener.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1'},
+      {type:'work',label:'Tempo 1 — 10min',dur:10,watts:'263–270W',text:'263–270W (78–80% FTP). Hard breathing, conversational. Cadence 88–92rpm.'},
       {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Tempo Interval 2'},
-      {type:'work',label:'Tempo 2 — 10min',dur:10,watts:'263–270W',text:'Same target. Smooth.'},
-      {type:'cooldown',label:'City Return',dur:5,watts:'160W',text:'Easy 5min return.'}]},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2'},
+      {type:'work',label:'Tempo 2 — 10min',dur:10,watts:'266–273W',text:'Same. Push 3W harder.'},
+      {type:'cooldown',label:'Return',dur:5,watts:'160W',text:'Easy 5min.'}]},
 
   tempo_75:{label:'Tempo — 75min',cat:'Tempo',color:'#f59e0b',bg:'rgba(245,158,11,.1)',tss:72,mins:75,type:'Ride',
-    desc:'75min | 20min city exit → 3×10min at 263–270W, 5min rests → 10min cooldown.',
-    goal:'30min total tempo. Good mid-week tempo session that builds lactate threshold without significant fatigue.',
+    desc:'75min | 20min city exit → 3×10min at 263–273W → cooldown.',
+    goal:'30min total tempo. Good mid-week dose that attacks your weakest zone.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–240W',text:'20min city exit. Build progressively. Last 2min: 2×20sec at 270W, 40sec easy between.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–240W',text:'20min build. Last 2min: 2×20sec at 270W, 40sec easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1'},
-      {type:'work',label:'Tempo 1 — 10min',dur:10,watts:'263–270W',text:'263–270W. Hard but controlled. Cadence 88–92rpm.'},
+      {type:'work',label:'Tempo 1 — 10min',dur:10,watts:'263–270W',text:'263–270W. Cadence 88–92rpm.'},
       {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2'},
       {type:'work',label:'Tempo 2 — 10min',dur:10,watts:'263–270W',text:'Same target.'},
       {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 3'},
-      {type:'work',label:'Tempo 3 — 10min',dur:10,watts:'266–273W',text:'Final. Push 3W harder if possible.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy.'}]},
+      {type:'work',label:'Tempo 3 — 10min',dur:10,watts:'266–273W',text:'Final. Push 3W harder.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
   tempo_90:{label:'Tempo — 90min',cat:'Tempo',color:'#f59e0b',bg:'rgba(245,158,11,.1)',tss:88,mins:90,type:'Ride',
-    desc:'90min | 20min city exit → 3×15min at 263–273W, 5min rests → 10min cooldown.',
-    goal:'45min total tempo. This is the full weekly tempo dose. 3×15 at 263–273W builds significant muscular endurance and aerobic power.',
+    desc:'90min | 20min city exit → 3×15min at 263–273W → cooldown.',
+    goal:'45min total tempo. Full weekly dose. 3×15 at 263–273W builds muscular endurance for VeloPeak.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–250W',text:'20min city exit. Build to 250W. Last 3min: 3×20sec at 280W, 40sec easy — priming.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–253W',text:'20min build. Last 3min: 3×20sec at 280W, 40sec easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1'},
-      {type:'work',label:'Tempo 1 — 15min',dur:15,watts:'263–273W',text:'263–273W (78–81% FTP). Breathing noticeably hard. 1–2 words possible between breaths. Cadence 88–92rpm.'},
+      {type:'work',label:'Tempo 1 — 15min',dur:15,watts:'263–273W',text:'263–273W (78–81% FTP). Hard breathing, 1–2 words possible. Cadence 88–92rpm.'},
       {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2'},
-      {type:'work',label:'Tempo 2 — 15min',dur:15,watts:'263–273W',text:'Same target. Relax upper body.'},
+      {type:'work',label:'Tempo 2 — 15min',dur:15,watts:'263–273W',text:'Same. Relax upper body.'},
       {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 3'},
-      {type:'work',label:'Tempo 3 — 15min',dur:15,watts:'270–280W',text:'Final block at upper tempo 270–280W. HR 165–172bpm.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy.'}]},
+      {type:'work',label:'Tempo 3 — 15min',dur:15,watts:'270–280W',text:'Final at upper tempo. HR 165–172bpm.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
   tempo_105:{label:'Tempo — 105min',cat:'Tempo',color:'#f59e0b',bg:'rgba(245,158,11,.1)',tss:104,mins:105,type:'Ride',
-    desc:'105min | 20min city exit → 2×20min at 266–276W, 8min rest → Z2 buffer → 10min cooldown.',
-    goal:'60min total tempo work. Extended tempo builds capacity to hold sustained power for 80km — more race-specific than short tempo intervals.',
+    desc:'105min | 20min city exit → 2×20min at 266–276W → Z2 buffer → cooldown.',
+    goal:'60min total tempo in longer blocks. Extended tempo is more race-specific for 80km rolling terrain than short intervals.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–253W',text:'20min city exit. Build to top of Z2. Last 2min: 1×30sec at 280W opener.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–253W',text:'20min build. Last 2min: 1×30sec at 280W opener.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 20min'},
-      {type:'work',label:'Tempo 1 — 20min',dur:20,watts:'266–276W',text:'266–276W (79–82% FTP). Settle by minute 4. HR 162–170bpm by minute 12. Not sweet spot — deliberately sub-SS.'},
+      {type:'work',label:'Tempo 1 — 20min',dur:20,watts:'266–276W',text:'266–276W (79–82% FTP). Settle by min 4. HR 162–170bpm. Below sweet spot intentionally.'},
       {type:'rest',label:'Recovery',dur:8,watts:'175W',text:'8min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2 — 20min'},
-      {type:'work',label:'Tempo 2 — 20min',dur:20,watts:'266–280W',text:'Final 20min. Push upper tempo 276–280W in last 5min if strong.'},
-      {type:'work',label:'Zone 2 Buffer',dur:17,watts:'196–210W',text:'17min easy Z2 to round out the session.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy.'}]},
+      {type:'work',label:'Tempo 2 — 20min',dur:20,watts:'266–280W',text:'Last 5min push to 280W if strong.'},
+      {type:'work',label:'Z2 Buffer',dur:17,watts:'196–210W',text:'17min easy Z2.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
   tempo_120:{label:'Tempo — 120min',cat:'Tempo',color:'#f59e0b',bg:'rgba(245,158,11,.1)',tss:122,mins:120,type:'Ride',
-    desc:'120min | 20min city exit → 3×20min at 263–276W, 8min rests → Z2 → 10min cooldown.',
-    goal:'75min total tempo. The highest volume tempo session. Only attempt when TSB is positive and sleep has been good.',
+    desc:'120min | 20min city exit → 3×20min at 263–276W → Z2 → cooldown.',
+    goal:'75min total tempo. Highest volume tempo session. Only when TSB positive and sleep quality high.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–250W',text:'20min city exit. Full build.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 20min'},
-      {type:'work',label:'Tempo 1 — 20min',dur:20,watts:'263–273W',text:'263–273W. Controlled effort.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–253W',text:'20min full build.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1'},
+      {type:'work',label:'Tempo 1 — 20min',dur:20,watts:'263–273W',text:'Controlled effort.'},
       {type:'rest',label:'Recovery',dur:8,watts:'175W',text:'8min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2 — 20min'},
-      {type:'work',label:'Tempo 2 — 20min',dur:20,watts:'263–273W',text:'Same target. Patience.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2'},
+      {type:'work',label:'Tempo 2 — 20min',dur:20,watts:'263–273W',text:'Same target.'},
       {type:'rest',label:'Recovery',dur:8,watts:'175W',text:'8min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 3 — final 20min'},
-      {type:'work',label:'Tempo 3 — 20min',dur:20,watts:'266–280W',text:'Final block. Push upper tempo if legs respond.'},
-      {type:'work',label:'Zone 2 Finish',dur:4,watts:'196–210W',text:'4min easy Z2.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy.'}]},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 3'},
+      {type:'work',label:'Tempo 3 — 20min',dur:20,watts:'266–280W',text:'Upper tempo final block.'},
+      {type:'work',label:'Z2',dur:4,watts:'196W',text:'4min Z2.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
-  // ═══ SWEET SPOT ══════════════════════════════════════════════════════════
+  // ═══ SWEET SPOT ═══════════════════════════════════════════════════════
   ss_60:{label:'Sweet Spot — 60min',cat:'Sweet Spot',color:'#f97316',bg:'rgba(249,115,22,.1)',tss:62,mins:60,type:'Ride',
-    desc:'60min | 20min city exit → 1×25min at 297–307W → 5min Z2 → 10min cooldown.',
-    goal:'Minimum effective SS dose. One solid 25min block when short on time. 297–307W is distinctly harder than tempo — lactate accumulates, breathing is labored.',
+    desc:'60min | 20min city exit → 1×25min at 297–307W → cooldown.',
+    goal:'Minimum SS dose. One solid 25min block. 297–307W is distinctly harder than tempo — lactate accumulates, breathing is labored.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–256W',text:'20min city exit. Build to 256W. Last 90sec: 1×30sec at 307W to prime neuromuscular system.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start 25min Sweet Spot block'},
-      {type:'work',label:'Sweet Spot — 25min',dur:25,watts:'297–307W',text:'297–307W (88–91% FTP). Settle by minute 3. HR climbs to 158–165bpm by minute 10. Cadence 90–95rpm. This is NOT tempo — feel the difference in muscular demand.'},
-      {type:'work',label:'Z2 Buffer',dur:5,watts:'196–210W',text:'5min easy Z2 to flush legs.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy.'}]},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–256W',text:'20min build. Last 90sec: 1×30sec at 307W opener.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — 25min Sweet Spot block'},
+      {type:'work',label:'Sweet Spot — 25min',dur:25,watts:'297–307W',text:'297–307W (88–91% FTP). HR climbs to 158–165bpm by min 10. Cadence 90–95rpm.'},
+      {type:'work',label:'Z2 Buffer',dur:5,watts:'196W',text:'5min easy Z2.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
   ss_75:{label:'Sweet Spot — 75min',cat:'Sweet Spot',color:'#f97316',bg:'rgba(249,115,22,.1)',tss:78,mins:75,type:'Ride',
-    desc:'75min | 20min city exit → 2×15min at 297–307W, 5min rest → 10min cooldown.',
-    goal:'30min total SS in two clean blocks. Good quality when you have 75min. Allows full effort on each interval.',
+    desc:'75min | 20min city exit → 2×15min at 297–307W → cooldown.',
+    goal:'30min total SS in two clean blocks. Allows full effort on each interval.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–253W',text:'20min city exit. Build progressively. Last 60sec: 1×20sec at 307W opener.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Sweet Spot Interval 1'},
-      {type:'work',label:'SS 1 — 15min',dur:15,watts:'297–307W',text:'297–307W. Cadence 90–95rpm. HR climbs to 158–165bpm by minute 8. Hold on.'},
-      {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Sweet Spot Interval 2'},
-      {type:'work',label:'SS 2 — 15min',dur:15,watts:'300–310W',text:'Final 15min. Push 3W harder than interval 1 if legs feel good.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy.'}]},
-
-  ss_90:{label:'Sweet Spot — 90min',cat:'Sweet Spot',color:'#f97316',bg:'rgba(249,115,22,.1)',tss:95,mins:90,type:'Ride',
-    desc:'90min | 20min city exit → 3×15min at 297–307W, 5min rests → 10min cooldown.',
-    goal:'45min total SS — the standard weekly volume. Three clean 15min blocks drives strong FTP adaptation while remaining recoverable.',
-    steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–253W',text:'20min city exit. Build to 253W. Last 90sec: 1×30sec at 307W.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–253W',text:'20min build. Last 60sec: 1×20sec at 307W.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start SS Interval 1'},
-      {type:'work',label:'SS 1 — 15min',dur:15,watts:'297–307W',text:'297–307W (88–91% FTP). Cadence 90–95rpm. HR 158–165bpm by minute 8.'},
+      {type:'work',label:'SS 1 — 15min',dur:15,watts:'297–307W',text:'297–307W. Cadence 90–95rpm. HR 158–165bpm by minute 8.'},
       {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start SS Interval 2'},
-      {type:'work',label:'SS 2 — 15min',dur:15,watts:'297–307W',text:'Same. Smooth power delivery.'},
+      {type:'work',label:'SS 2 — 15min',dur:15,watts:'300–310W',text:'Push 3W harder than interval 1.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
+
+  ss_90:{label:'Sweet Spot — 90min',cat:'Sweet Spot',color:'#f97316',bg:'rgba(249,115,22,.1)',tss:95,mins:90,type:'Ride',
+    desc:'90min | 20min city exit → 3×15min at 297–307W → cooldown.',
+    goal:'45min total SS. Standard weekly SS volume. Three 15min blocks with 5min rests.',
+    steps:[
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–253W',text:'20min build. Last 90sec: 1×30sec at 307W.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start SS 1'},
+      {type:'work',label:'SS 1 — 15min',dur:15,watts:'297–307W',text:'297–307W. Cadence 90–95rpm.'},
       {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start SS Interval 3'},
-      {type:'work',label:'SS 3 — 15min',dur:15,watts:'300–310W',text:'Final. Push upper SS in last 3min.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy.'}]},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start SS 2'},
+      {type:'work',label:'SS 2 — 15min',dur:15,watts:'297–307W',text:'Same.'},
+      {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start SS 3'},
+      {type:'work',label:'SS 3 — 15min',dur:15,watts:'300–310W',text:'Final. Upper SS last 3min.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
   ss_2x20:{label:'Sweet Spot 2×20 — KEY',cat:'Sweet Spot',color:'#f97316',bg:'rgba(249,115,22,.14)',tss:92,mins:75,type:'Ride',
-    desc:'75min | 20min city exit → 2×20min at 303–313W, 5min rest → 10min cooldown.',
-    goal:'The single most important ride of your week. Twenty-minute SS intervals at 90–93% FTP are the primary driver of FTP gains. No excuses.',
+    desc:'75min | 20min city exit → 2×20min at 303–313W → cooldown. #1 priority session.',
+    goal:'The single most important ride of your week. Twenty-minute SS at 90–93% FTP is the primary driver of FTP gains.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–270W',text:'20min city exit: 160→200→240→270W. Last 3min: 3×30sec at 307W, 30sec easy between — full neuromuscular priming.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 20 minutes at 303–313W'},
-      {type:'work',label:'SS Interval 1 — 20min',dur:20,watts:'303–313W',text:'303–313W (90–93% FTP). Settle by minute 3. HR 160–167bpm by minute 10. Cadence 90–95rpm. This is the most important 20 minutes of your training week.'},
-      {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy. Recover.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2 — final 20 minutes'},
-      {type:'work',label:'SS Interval 2 — 20min',dur:20,watts:'303–313W',text:'Start at 303W. If controlled at minute 15: push to 313–320W. Note any back tightness.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'10min easy. Stretch erectors immediately.'}]},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–270W',text:'160→200→240→270W. Last 3min: 3×30sec at 307W, 30sec easy between — full priming.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Interval 1 starts — 20 minutes at 303–313W'},
+      {type:'work',label:'SS Interval 1 — 20min',dur:20,watts:'303–313W',text:'303–313W (90–93% FTP). Settle by min 3. HR 160–167bpm by min 10. Cadence 90–95rpm.'},
+      {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Interval 2 starts — final 20 minutes'},
+      {type:'work',label:'SS Interval 2 — 20min',dur:20,watts:'303–313W',text:'Start 303W. If controlled at min 15 push to 313–320W.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min. Stretch erectors.'}]},
 
   ss_105:{label:'Sweet Spot — 105min',cat:'Sweet Spot',color:'#f97316',bg:'rgba(249,115,22,.1)',tss:110,mins:105,type:'Ride',
-    desc:'105min | 20min city exit → 3×20min at 300–310W, 7min rests → 8min cooldown.',
-    goal:'60min total SS. The highest sustainable SS dose. Only when TSB > 0. This session drives significant FTP gains but requires good recovery afterward.',
+    desc:'105min | 20min city exit → 3×20min at 300–310W → cooldown.',
+    goal:'60min total SS. Highest sustainable SS dose. Only when TSB > 0.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–270W',text:'20min full build out of city. Last 3min: 3×20sec at 307W openers.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 20min'},
-      {type:'work',label:'SS 1 — 20min',dur:20,watts:'300–310W',text:'300–310W (89–92% FTP). Settle early. HR 160–165bpm by minute 10.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–270W',text:'20min full build. Last 3min: 3×20sec at 307W openers.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start SS 1 — 20min'},
+      {type:'work',label:'SS 1 — 20min',dur:20,watts:'300–310W',text:'300–310W. Settle early.'},
       {type:'rest',label:'Recovery',dur:7,watts:'175W',text:'7min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2 — 20min'},
-      {type:'work',label:'SS 2 — 20min',dur:20,watts:'300–310W',text:'Match interval 1. Getting harder now.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start SS 2 — 20min'},
+      {type:'work',label:'SS 2 — 20min',dur:20,watts:'300–310W',text:'Match interval 1.'},
       {type:'rest',label:'Recovery',dur:7,watts:'175W',text:'7min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 3 — final 20min'},
-      {type:'work',label:'SS 3 — 20min',dur:20,watts:'297–307W',text:'Final block. If fading, hold 297W minimum. Quality over power.'},
-      {type:'cooldown',label:'City Return',dur:8,watts:'160W',text:'8min easy.'}]},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start SS 3 — final 20min'},
+      {type:'work',label:'SS 3 — 20min',dur:20,watts:'297–307W',text:'Hold 297W minimum. Quality over power.'},
+      {type:'cooldown',label:'Return',dur:8,watts:'160W',text:'Easy 8min.'}]},
 
   ss_ou_75:{label:'SS Over-Unders — 75min',cat:'Sweet Spot',color:'#f97316',bg:'rgba(249,115,22,.1)',tss:88,mins:75,type:'Ride',
-    desc:'75min | 20min city exit → 2 sets of 5×(3min 320W / 2min 290W) → cooldown.',
-    goal:'Over-unders train lactate clearance — surge above threshold, recover below. Essential for puncheur racing and responding to road undulations.',
+    desc:'75min | 20min city exit → 2 sets 5×(3min 320W / 2min 290W) → cooldown.',
+    goal:'Over-unders train lactate clearance — surge over threshold, recover below. Essential for puncheur race surges.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–256W',text:'20min city exit. Last 3min: 3×20sec at 320W, 40sec easy — prime lactate system.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Set 1 — 5 rounds'},
-      {type:'work',label:'Set 1 — 5 Over-Unders',dur:25,watts:'3min 320W / 2min 290W',text:'5 rounds: 3min at 320W (95% FTP — OVER threshold), immediately 2min at 290W (86% — UNDER). No rest between rounds. HR spikes then partially recovers. This is lactate clearance training.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–256W',text:'20min build. Last 3min: 3×20sec at 320W, 40sec easy.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Set 1: 5 rounds'},
+      {type:'work',label:'Set 1 — 5 Over-Unders',dur:25,watts:'3min 320W / 2min 290W',text:'5 rounds: 3min at 320W (95% FTP), immediately 2min at 290W (86%). No rest between rounds.'},
       {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min full recovery.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP for Set 2'},
-      {type:'work',label:'Set 2 — 5 Over-Unders',dur:25,watts:'3min 320W / 2min 290W',text:'5 more rounds. This is the set where real adaptation happens.'},
-      {type:'cooldown',label:'City Return',dur:5,watts:'160W',text:'5min easy.'}]},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Set 2'},
+      {type:'work',label:'Set 2 — 5 Over-Unders',dur:25,watts:'3min 320W / 2min 290W',text:'5 more rounds. Harder set — this is where adaptation is made.'},
+      {type:'cooldown',label:'Return',dur:5,watts:'160W',text:'Easy 5min.'}]},
 
-  // ═══ LONG RIDE + BLOCKS ══════════════════════════════════════════════════
-  long_ss_120:{label:'Long + SS Blocks — 120min',cat:'Endurance',color:'#3b82f6',bg:'rgba(59,130,246,.1)',tss:115,mins:120,type:'Ride',
-    desc:'120min | 20min city exit → 40min Z2 → 2×15min SS → 30min Z2 → 10min cooldown.',
-    goal:'Race simulation — sustained aerobic effort with hard mid-ride SS blocks. Sweet spot on tired legs is the most specific VeloPeak 500 preparation.',
+  long_ss_120:{label:'Long Ride + SS — 120min',cat:'Endurance',color:'#3b82f6',bg:'rgba(59,130,246,.1)',tss:115,mins:120,type:'Ride',
+    desc:'120min | 20min city exit → 40min Z2 → 2×15min SS → Z2 → cooldown. Race sim.',
+    goal:'VeloPeak 500 simulation. Hard mid-ride SS blocks on tired legs is the most specific race preparation.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'Easy 20min city exit build.'},
-      {type:'work',label:'Zone 2 Phase 1',dur:40,watts:'196–210W',text:'40min Z2 at 196–210W. Save energy for intervals.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start SS Block 1'},
-      {type:'work',label:'SS Block 1 — 15min',dur:15,watts:'297–307W',text:'15min at 297–307W on already-tired legs. This is what VeloPeak feels like mid-race.'},
+      {type:'warmup',label:'City Exit',dur:20,watts:'160–196W',text:'Easy 20min.'},
+      {type:'work',label:'Z2 Phase 1',dur:40,watts:'196–210W',text:'40min Z2. Save legs.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — SS Block 1'},
+      {type:'work',label:'SS Block 1 — 15min',dur:15,watts:'297–307W',text:'15min at 297–307W on tired legs.'},
       {type:'rest',label:'Recovery',dur:6,watts:'175W',text:'6min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start SS Block 2'},
-      {type:'work',label:'SS Block 2 — 15min',dur:15,watts:'297–307W',text:'Final 15min hard. Match block 1. Stand if back tightens.'},
-      {type:'work',label:'Zone 2 Finish',dur:9,watts:'196–210W',text:'9min easy Z2 finish.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
+      {type:'lap',label:'Press LAP',text:'Press LAP — SS Block 2'},
+      {type:'work',label:'SS Block 2 — 15min',dur:15,watts:'297–307W',text:'Final 15min hard.'},
+      {type:'work',label:'Z2 Finish',dur:14,watts:'196–210W',text:'14min easy Z2.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
-  long_ss_150:{label:'Long + SS Blocks — 150min',cat:'Endurance',color:'#3b82f6',bg:'rgba(59,130,246,.1)',tss:145,mins:150,type:'Ride',
-    desc:'150min | 20min city exit → 60min Z2 → 2×20min SS → 30min Z2 → 10min cooldown.',
-    goal:'Peak VeloPeak simulation. Maximum aerobic load with race-specific intensity blocks. Only do this when rested.',
-    steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–196W',text:'Easy 20min city exit.'},
-      {type:'work',label:'Zone 2 Phase 1',dur:60,watts:'196–210W',text:'60min base at 196–210W. Save legs.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start SS Block 1 — 20min'},
-      {type:'work',label:'SS Block 1 — 20min',dur:20,watts:'300–310W',text:'20min at 300–310W on tired legs. Race simulation. Dig in.'},
-      {type:'rest',label:'Recovery',dur:8,watts:'175W',text:'8min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start SS Block 2 — 20min'},
-      {type:'work',label:'SS Block 2 — 20min',dur:20,watts:'297–307W',text:'Final 20min hard. Start at 297W, hold.'},
-      {type:'work',label:'Zone 2 Finish',dur:22,watts:'196–210W',text:'22min easy Z2.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
-
-  // ═══ THRESHOLD ═════════════════════════════════════════════════════════
+  // ═══ THRESHOLD ════════════════════════════════════════════════════════
   threshold_60:{label:'Threshold — 60min',cat:'Threshold',color:'#E01A22',bg:'rgba(224,26,34,.1)',tss:72,mins:60,type:'Ride',
-    desc:'60min | 20min city exit → 3×6min at 323–333W, 5min rests → 4min cooldown.',
-    goal:'Minimum threshold dose. 18min at FTP when time is short. Only when TSB positive.',
+    desc:'60min | 20min city exit → 3×6min at 323–333W → cooldown. Minimum FTP dose.',
+    goal:'18min at FTP when time is limited. Only when TSB positive — threshold requires freshness.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–287W',text:'Full 20min build. Last 4min: 4×20sec at 337W, 40sec easy — fully prime lactate system. Cannot skip this for threshold work.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 6min at 323–333W'},
-      {type:'work',label:'Threshold 1 — 6min',dur:6,watts:'323–333W',text:'323–333W (96–99% FTP). HR hits 170–180bpm. This is HARD. Cadence 85–90rpm.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–287W',text:'Full build. Last 4min: 4×20sec at 337W, 40sec easy — must prime fully for threshold.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 6min'},
+      {type:'work',label:'Threshold 1 — 6min',dur:6,watts:'323–333W',text:'323–333W (96–99% FTP). HR 170–180bpm. Cadence 85–90rpm.'},
       {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2'},
       {type:'work',label:'Threshold 2 — 6min',dur:6,watts:'323–333W',text:'Match interval 1.'},
       {type:'rest',label:'Recovery',dur:5,watts:'175W',text:'5min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 3'},
-      {type:'work',label:'Threshold 3 — 6min',dur:6,watts:'323–337W',text:'Final. Push to 337W in last 2min.'},
-      {type:'cooldown',label:'City Return',dur:4,watts:'160W',text:'Easy 4min.'}]},
+      {type:'work',label:'Threshold 3 — 6min',dur:6,watts:'323–337W',text:'Final. Push to 337W last 2min.'},
+      {type:'cooldown',label:'Return',dur:4,watts:'160W',text:'Easy 4min.'}]},
 
   threshold_75:{label:'Threshold — 75min',cat:'Threshold',color:'#E01A22',bg:'rgba(224,26,34,.1)',tss:88,mins:75,type:'Ride',
-    desc:'75min | 20min city exit → 4×8min at 323–337W, 4min rests → 7min cooldown.',
-    goal:'32min threshold. Short intervals, high quality. More total FTP time than 2×12 with better rep quality.',
+    desc:'75min | 20min city exit → 4×8min at 323–337W → cooldown. 32min total FTP.',
+    goal:'Short threshold intervals with better quality per rep. 32min at FTP in 4 clean blocks.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–280W',text:'20min full build. Last 4min: 4×30sec at 337W, 30sec easy — complete threshold priming.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 8min'},
-      {type:'work',label:'Threshold 1 — 8min',dur:8,watts:'323–337W',text:'323–337W (96–100% FTP). Every minute is a battle. HR 172–182bpm. Cadence 85–90rpm.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–280W',text:'20min full build. Last 4min: 4×30sec at 337W, 30sec easy.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 8min at 323–337W'},
+      {type:'work',label:'Threshold 1 — 8min',dur:8,watts:'323–337W',text:'323–337W (96–100% FTP). HR 172–182bpm. Every minute is a battle. Cadence 85–90rpm.'},
       {type:'rest',label:'Recovery',dur:4,watts:'175W',text:'4min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2'},
       {type:'work',label:'Threshold 2 — 8min',dur:8,watts:'323–337W',text:'Match interval 1.'},
       {type:'rest',label:'Recovery',dur:4,watts:'175W',text:'4min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 3'},
-      {type:'work',label:'Threshold 3 — 8min',dur:8,watts:'323–337W',text:'Third. Getting very hard.'},
+      {type:'work',label:'Threshold 3 — 8min',dur:8,watts:'323–337W',text:'Third. Very hard.'},
       {type:'rest',label:'Recovery',dur:4,watts:'175W',text:'4min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP — FINAL interval'},
-      {type:'work',label:'Threshold 4 — 8min',dur:8,watts:'323–340W',text:'Final. Push 3W harder in last 2min. Leave nothing.'},
-      {type:'cooldown',label:'City Return',dur:7,watts:'160W',text:'Easy 7min.'}]},
+      {type:'work',label:'Threshold 4 — 8min',dur:8,watts:'323–340W',text:'Final. 3W harder last 2min.'},
+      {type:'cooldown',label:'Return',dur:7,watts:'160W',text:'Easy 7min.'}]},
 
   threshold_90:{label:'Threshold — 90min',cat:'Threshold',color:'#E01A22',bg:'rgba(224,26,34,.1)',tss:105,mins:90,type:'Ride',
-    desc:'90min | 20min city exit → 2×16min at 323–337W, 8min rest → 10min Z2 → 10min cooldown.',
-    goal:'32min threshold in long sustained blocks. Builds the ability to hold FTP for extended periods. Do ONLY when TSB > -5.',
+    desc:'90min | 20min city exit → 2×16min at 323–337W → Z2 → cooldown.',
+    goal:'32min threshold in long sustained blocks. Only when TSB > -5.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–287W',text:'20min full build. Last 5min: 3×1min at 323W, 1min easy between — complete priming.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–287W',text:'Full build. Last 5min: 3×1min at 323W, 1min easy between.'},
       {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 16min'},
-      {type:'work',label:'Threshold 1 — 16min',dur:16,watts:'323–337W',text:'323–337W. HR 172–182bpm. Every minute is hard. Controlled breathing — if you are gasping, you went too hard. Hold position.'},
-      {type:'rest',label:'Recovery',dur:8,watts:'175W',text:'8min easy. Full recovery intended.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2 — final 16min'},
-      {type:'work',label:'Threshold 2 — 16min',dur:16,watts:'320–337W',text:'Match interval 1. Last 3min push to 340W if power is still there. This is where FTP ceiling rises.'},
+      {type:'work',label:'Threshold 1 — 16min',dur:16,watts:'323–337W',text:'323–337W. HR 172–182bpm. Controlled breathing throughout.'},
+      {type:'rest',label:'Recovery',dur:8,watts:'175W',text:'8min easy.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2 — 16min'},
+      {type:'work',label:'Threshold 2 — 16min',dur:16,watts:'320–337W',text:'Match interval 1. Last 3min push to 340W.'},
       {type:'work',label:'Z2 Buffer',dur:10,watts:'196–210W',text:'10min easy Z2.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
+      {type:'cooldown',label:'Return',dur:10,watts:'160W',text:'Easy 10min.'}]},
 
   threshold_ou:{label:'Threshold Over-Unders — 75min',cat:'Threshold',color:'#E01A22',bg:'rgba(224,26,34,.1)',tss:90,mins:75,type:'Ride',
-    desc:'75min | 20min city exit → 4 rounds of 2min 354W / 3min 317W → 10min cooldown.',
-    goal:'Threshold over-unders build extreme lactate tolerance. Surge above threshold, recover below without stopping. Race-specific for punchy climbs.',
+    desc:'75min | 20min city exit → 4 rounds 2min 354W / 3min 317W × 2 sets → cooldown.',
+    goal:'Extreme lactate tolerance. Surge above FTP, recover below. Race-specific for puncheur climbing.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–280W',text:'20min build. Last 5min: 2×1min at 337W, 2min easy — prime fully.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — 4 rounds continuous: 2min at 354W / 3min at 317W'},
-      {type:'work',label:'Set 1 — 4 Over-Unders',dur:20,watts:'2min 354W then 3min 317W',text:'4 rounds continuous: 2min at 354W (105% FTP — OVER), immediately 3min at 317W (94% — UNDER, still hard). No rest between rounds. This builds the ability to surge and recover under fatigue.'},
-      {type:'rest',label:'Rest',dur:8,watts:'160W',text:'8min full recovery.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — second set: 3 more rounds'},
-      {type:'work',label:'Set 2 — 3 Over-Unders',dur:15,watts:'2min 354W / 3min 317W',text:'3 more rounds. Shorter second set — the fatigue from set 1 makes this equally hard.'},
-      {type:'cooldown',label:'City Return',dur:7,watts:'160W',text:'Easy 7min.'}]},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–280W',text:'Full build. Last 5min: 2×1min at 337W, 2min easy.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Set 1: 4 rounds 2min 354W / 3min 317W'},
+      {type:'work',label:'Set 1 — 4 Over-Unders',dur:20,watts:'2min 354W / 3min 317W',text:'4 rounds continuous: 2min at 354W (105% FTP), immediately 3min at 317W (94%). No rest between rounds.'},
+      {type:'rest',label:'Recovery',dur:8,watts:'160W',text:'8min full recovery.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Set 2: 3 rounds'},
+      {type:'work',label:'Set 2 — 3 Over-Unders',dur:15,watts:'2min 354W / 3min 317W',text:'3 more rounds. Fatigue from set 1 makes this equally hard.'},
+      {type:'cooldown',label:'Return',dur:7,watts:'160W',text:'Easy 7min.'}]},
 
-  // ═══ VO2 MAX ═════════════════════════════════════════════════════════════
+  // ═══ VO2 MAX ══════════════════════════════════════════════════════════
   vo2_60:{label:'VO2 Max — 60min',cat:'VO2 Max',color:'#8b5cf6',bg:'rgba(139,92,246,.12)',tss:68,mins:60,type:'Ride',
-    desc:'60min | 20min city exit → 5×3min at 371–388W, 3min rest → 5min cooldown.',
-    goal:'Short VO2 session. 15min at VO2 max intensity is enough stimulus. Your strongest zone from rowing — develop it.',
+    desc:'60min | 20min city exit → 5×3min at 371–388W, 3min rest → cooldown.',
+    goal:'15min at VO2 max. Short but effective stimulus. Your strongest zone from rowing.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–270W',text:'20min build. Last 4min: 4×30sec at 371W, 30sec easy — elevate HR and prime VO2 system.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–270W',text:'20min build. Last 4min: 4×30sec at 371W, 30sec easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP — 5 rounds: 3min at 371–388W / 3min easy'},
-      {type:'work',label:'VO2 Reps 1–5',dur:30,watts:'371–388W / 160W alternating',text:'5 rounds: 3min at 371–388W (110–115% FTP), 3min at 160W easy. Cadence 95–105rpm on hard efforts. HR hits 182–191bpm by end of each rep. If power drops below 355W, the rep is over.'},
-      {type:'cooldown',label:'City Return',dur:5,watts:'155W',text:'Easy 5min.'}]},
+      {type:'work',label:'VO2 Reps 1–5',dur:30,watts:'371–388W on / 160W off',text:'5 rounds: 3min at 371–388W (110–115% FTP), 3min at 160W easy. HR peaks at 182–191bpm. If power drops below 355W, rest instead.'},
+      {type:'cooldown',label:'Return',dur:5,watts:'155W',text:'Easy 5min.'}]},
 
   vo2_75:{label:'VO2 Max — 75min',cat:'VO2 Max',color:'#8b5cf6',bg:'rgba(139,92,246,.12)',tss:82,mins:75,type:'Ride',
-    desc:'75min | 20min city exit → 8×3min at 371–388W, 3min rest → 7min cooldown.',
-    goal:'Standard VO2 session. 8 reps is the classic dose for this intensity. 24min total at VO2 max.',
+    desc:'75min | 20min city exit → 8×3min at 371–388W, 3min rest → cooldown.',
+    goal:'24min at VO2 max. Classic 8-rep session. This is your strongest zone — maximize it.',
     steps:[
       {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–270W',text:'20min build. Last 4min: 4×30sec at 371W, 30sec easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP — 8 rounds: 3min hard / 3min easy'},
-      {type:'work',label:'VO2 Reps 1–4',dur:24,watts:'371–388W / 160W alternating',text:'First 4 rounds: 3min at 371–388W, 3min at 160W. Cadence 95–105rpm. HR 182–191bpm peak.'},
-      {type:'rest',label:'Extended Recovery',dur:3,watts:'155W',text:'3min extra at midpoint.'},
-      {type:'work',label:'VO2 Reps 5–8',dur:24,watts:'371–388W / 160W alternating',text:'Final 4 rounds. If power drops below 355W, extend the recovery. Quality not ego.'},
-      {type:'cooldown',label:'City Return',dur:7,watts:'155W',text:'Easy 7min.'}]},
+      {type:'work',label:'VO2 Reps 1–4',dur:24,watts:'371–388W on / 160W off',text:'First 4 rounds: 3min at 371–388W, 3min at 160W. Cadence 95–105rpm.'},
+      {type:'rest',label:'Mid-Set Rest',dur:3,watts:'155W',text:'3min extra at midpoint.'},
+      {type:'work',label:'VO2 Reps 5–8',dur:24,watts:'371–388W on / 160W off',text:'Final 4 rounds. Power below 355W = extend recovery.'},
+      {type:'cooldown',label:'Return',dur:7,watts:'155W',text:'Easy 7min.'}]},
 
   vo2_90:{label:'VO2 Max — 90min',cat:'VO2 Max',color:'#8b5cf6',bg:'rgba(139,92,246,.12)',tss:95,mins:90,type:'Ride',
-    desc:'90min | 20min city exit → 4×5min at 364–381W, 5min rest → 10min cooldown.',
-    goal:'Long VO2 max intervals deliver maximum aerobic ceiling stimulus. Four 5-minute efforts are extremely demanding — do when fresh.',
+    desc:'90min | 20min city exit → 4×5min at 364–381W, 5min rest → Z2 → cooldown.',
+    goal:'Maximum VO2 max stimulus. Four 5-minute efforts — the strongest aerobic ceiling raiser available.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–270W',text:'20min build. Last 5min: 2×1min at 371W, 2min easy — fully prime aerobic system.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 1 — 5min'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–270W',text:'20min build. Last 5min: 2×1min at 371W, 2min easy.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start VO2 Rep 1 — 5min'},
       {type:'work',label:'VO2 Rep 1 — 5min',dur:5,watts:'364–381W',text:'364–381W (108–113% FTP). Hard from the start. Cadence 95–105rpm. HR hits max by minute 4.'},
       {type:'rest',label:'Recovery',dur:5,watts:'155W',text:'5min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 2'},
-      {type:'work',label:'VO2 Rep 2 — 5min',dur:5,watts:'364–381W',text:'Match rep 1. Power drop of 10W acceptable.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start VO2 Rep 2'},
+      {type:'work',label:'VO2 Rep 2 — 5min',dur:5,watts:'364–381W',text:'Match rep 1.'},
       {type:'rest',label:'Recovery',dur:5,watts:'155W',text:'5min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP to start Interval 3'},
+      {type:'lap',label:'Press LAP',text:'Press LAP to start VO2 Rep 3'},
       {type:'work',label:'VO2 Rep 3 — 5min',dur:5,watts:'360–381W',text:'Most important rep. Dig in.'},
       {type:'rest',label:'Recovery',dur:5,watts:'155W',text:'5min easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — FINAL interval'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — FINAL rep'},
       {type:'work',label:'VO2 Rep 4 — 5min',dur:5,watts:'360–381W',text:'Everything left. Cadence up to 100rpm.'},
-      {type:'work',label:'Z2 Buffer',dur:15,watts:'196–210W',text:'15min easy Z2.'},
-      {type:'cooldown',label:'City Return',dur:10,watts:'155W',text:'Easy 10min.'}]},
+      {type:'work',label:'Z2 Buffer',dur:15,watts:'196–210W',text:'15min Z2.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'155W',text:'Easy 10min.'}]},
 
   vo2_on_off:{label:'VO2 On-Offs 30/15',cat:'VO2 Max',color:'#8b5cf6',bg:'rgba(139,92,246,.12)',tss:65,mins:60,type:'Ride',
-    desc:'60min | 20min city exit → 2 sets of 10×(30sec 404W / 15sec 203W) → cooldown.',
-    goal:'On-offs maximize time near VO2 max with less central fatigue than long intervals. Brief 15sec recovery lets you repeat 20 total hard efforts.',
+    desc:'60min | 20min city exit → 2 sets 10×(30sec 404W / 15sec 203W) → cooldown.',
+    goal:'Maximizes time near VO2 max with less central fatigue. 20 total hard efforts.',
     steps:[
       {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–270W',text:'20min build. Last 3min: 3×20sec at 388W, 40sec easy.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — Set 1: 10 rounds of 30sec/15sec'},
-      {type:'work',label:'Set 1 — 10 On-Offs',dur:15,watts:'404W on / 203W off',text:'10 rounds: 30sec at 404W (120% FTP), 15sec at 203W. No rest longer than 15sec. Cadence 95–105rpm on hard efforts.'},
-      {type:'rest',label:'Rest Between Sets',dur:5,watts:'160W',text:'5min easy.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Set 1: 10×(30sec 404W / 15sec 203W)'},
+      {type:'work',label:'Set 1 — 10 On-Offs',dur:15,watts:'404W on / 203W off',text:'10 rounds: 30sec at 404W (120% FTP), 15sec at 203W. Cadence 95–105rpm on hard efforts.'},
+      {type:'rest',label:'Rest',dur:5,watts:'160W',text:'5min easy.'},
       {type:'lap',label:'Press LAP',text:'Press LAP — Set 2: 10 more rounds'},
       {type:'work',label:'Set 2 — 10 On-Offs',dur:15,watts:'404W on / 203W off',text:'Second set. Hold 395W+ minimum.'},
-      {type:'cooldown',label:'City Return',dur:5,watts:'155W',text:'5min easy.'}]},
+      {type:'cooldown',label:'Return',dur:5,watts:'155W',text:'Easy 5min.'}]},
 
-  // ═══ ANAEROBIC ═════════════════════════════════════════════════════════
-  anaerobic_60:{label:'Anaerobic Attacks — 60min',cat:'Anaerobic',color:'#c026d3',bg:'rgba(192,38,211,.1)',tss:60,mins:60,type:'Ride',
-    desc:'60min | 20min city exit → 10×30sec at 440–488W, 2.5min rest → 5min cooldown.',
-    goal:'Race attacks happen at 130–145% FTP. This trains repeated surging ability — critical for responding to attacks in VeloPeak 500.',
+  vo2_pyramid:{label:'VO2 Pyramid — 75min',cat:'VO2 Max',color:'#8b5cf6',bg:'rgba(139,92,246,.12)',tss:78,mins:75,type:'Ride',
+    desc:'75min | 20min city exit → pyramid 2-3-4-3-2min at 371–388W → cooldown.',
+    goal:'Pyramid intervals vary the duration to probe different aerobic systems. Shorter intervals allow higher power, longer build max aerobic time.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–253W',text:'20min easy city exit. Last 5min: 3×10sec max effort, 90sec easy between — prime neuromuscular system fully.'},
-      {type:'lap',label:'Press LAP',text:'Press LAP — 10 attacks with 2.5min full recovery'},
-      {type:'work',label:'Attacks 1–5',dur:18,watts:'440–488W',text:'5 attacks: 30sec at 440–488W (130–145% FTP), 2.5min easy. Do not pace — absolute maximum for 30sec. Seated start, accelerate.'},
-      {type:'rest',label:'Extended Recovery',dur:5,watts:'155W',text:'5min recovery at midpoint.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–270W',text:'Full build. Last 4min: 4×30sec at 371W, 30sec easy.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — Pyramid: 2 / 3 / 4 / 3 / 2 min with equal recovery'},
+      {type:'work',label:'2min — Easy End',dur:2,watts:'381–396W',text:'2min at 381–396W (113–117% FTP). Aggressive start.'},
+      {type:'rest',label:'Recovery 2min',dur:2,watts:'155W',text:'2min easy.'},
+      {type:'work',label:'3min',dur:3,watts:'374–388W',text:'3min at 374–388W.'},
+      {type:'rest',label:'Recovery 3min',dur:3,watts:'155W',text:'3min easy.'},
+      {type:'work',label:'4min — Peak',dur:4,watts:'371–381W',text:'4min at 371–381W. The longest and hardest interval.'},
+      {type:'rest',label:'Recovery 4min',dur:4,watts:'155W',text:'4min easy. Full recovery.'},
+      {type:'work',label:'3min',dur:3,watts:'374–388W',text:'Back down the pyramid. 3min hard.'},
+      {type:'rest',label:'Recovery 3min',dur:3,watts:'155W',text:'3min easy.'},
+      {type:'work',label:'2min — Hard Finish',dur:2,watts:'381–404W',text:'Final 2min. Maximum for the short duration.'},
+      {type:'rest',label:'Set Rest',dur:8,watts:'155W',text:'8min full recovery.'},
+      {type:'work',label:'Repeat Pyramid',dur:23,watts:'2-3-4-3-2min / equal recovery',text:'Second full pyramid. 2/3/4/3/2 min with equal recovery each time.'},
+      {type:'cooldown',label:'Return',dur:10,watts:'155W',text:'Easy 10min.'}]},
+
+  // ═══ ANAEROBIC ════════════════════════════════════════════════════════
+  anaerobic_60:{label:'Anaerobic Attacks — 60min',cat:'Anaerobic',color:'#c026d3',bg:'rgba(192,38,211,.1)',tss:60,mins:60,type:'Ride',
+    desc:'60min | 20min city exit → 10×30sec at 440–488W, 2.5min rest → cooldown.',
+    goal:'Race attacks at 130–145% FTP. Trains repeated surging for VeloPeak 500.',
+    steps:[
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–253W',text:'20min easy. Last 5min: 3×10sec max, 90sec easy — prime neuromuscular system.'},
+      {type:'lap',label:'Press LAP',text:'Press LAP — 10 attacks with 2.5min recovery'},
+      {type:'work',label:'Attacks 1–5',dur:18,watts:'440–488W',text:'5 attacks: 30sec at 440–488W, 2.5min at 160W. Full acceleration. Cadence 95–110rpm.'},
+      {type:'rest',label:'Extended Recovery',dur:5,watts:'155W',text:'5min recovery.'},
       {type:'lap',label:'Press LAP',text:'Press LAP — Final 5 attacks'},
-      {type:'work',label:'Attacks 6–10',dur:18,watts:'440–488W',text:'5 more attacks. Power below 410W = extend recovery instead.'},
-      {type:'cooldown',label:'City Return',dur:5,watts:'155W',text:'Easy 5min.'}]},
+      {type:'work',label:'Attacks 6–10',dur:18,watts:'440–488W',text:'5 more attacks. Power below 410W = extend rest.'},
+      {type:'cooldown',label:'Return',dur:5,watts:'155W',text:'Easy 5min.'}]},
 
   sprint_60:{label:'Sprint Power — 60min',cat:'Anaerobic',color:'#c026d3',bg:'rgba(192,38,211,.1)',tss:35,mins:60,type:'Ride',
-    desc:'60min | 20min city exit → 6×15sec MAX sprint, 5min recovery → 10min cooldown.',
-    goal:'Pure neuromuscular power. Sprints recruit fast-twitch fibers and train peak output. Do when completely fresh — never after hard sessions.',
+    desc:'60min | 20min city exit → 6×15sec MAX sprint, 5min full recovery → cooldown.',
+    goal:'Peak neuromuscular power. Sprints recruit fast-twitch fibers and train absolute maximum output. Do only when completely fresh.',
     steps:[
-      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–240W',text:'20min city exit build. Last 5min: 3×5sec max effort sprints, 2min between — just priming nervous system.'},
+      {type:'warmup',label:'City Exit Warmup',dur:20,watts:'160–240W',text:'Easy city exit. Last 5min: 3×5sec max effort sprints, 2min between — just priming.'},
       {type:'lap',label:'Press LAP',text:'Press LAP — 6 max sprints with 5min full recovery'},
-      {type:'work',label:'Sprint 1 — 15sec',dur:1,watts:'500W+',text:'15sec ABSOLUTE MAXIMUM. Stand and sprint. Accelerate from 80rpm to 110+ rpm. Do not pace this. Everything you have.'},
-      {type:'rest',label:'Full Recovery',dur:5,watts:'155W',text:'5min FULL recovery. Phosphocreatine must restore completely.'},
-      {type:'work',label:'Sprints 2–6',dur:30,watts:'500W+ / 5min easy',text:'5 more max sprints with 5min full recovery each. If power drops below 420W, end session. Sprint quality degrades fast — better 4 good than 6 bad.'},
-      {type:'cooldown',label:'City Return',dur:4,watts:'155W',text:'Easy 4min.'}]},
+      {type:'work',label:'Sprint 1 — 15sec',dur:1,watts:'500W+',text:'15sec ABSOLUTE MAX. Stand and sprint. 80→110+ rpm. Do not pace. Everything.'},
+      {type:'rest',label:'Full Recovery',dur:5,watts:'155W',text:'5min FULL recovery. Phosphocreatine must fully restore.'},
+      {type:'work',label:'Sprints 2–6',dur:30,watts:'500W+ / 5min easy',text:'5 more max sprints with 5min full recovery each. If below 420W, end session.'},
+      {type:'cooldown',label:'Return',dur:4,watts:'155W',text:'Easy 4min.'}]},
 
-  // ═══ GYM ═════════════════════════════════════════════════════════════════
+  // ═══ GYM ══════════════════════════════════════════════════════════════
   gym_cycling:{label:'Gym — Cycling Specific',cat:'Gym',color:'#8b5cf6',bg:'rgba(139,92,246,.1)',tss:30,mins:50,type:'WeightTraining',
-    desc:'50min. Single-leg, glutes, core. No bilateral squats until post-Megre Aug 1.',
-    goal:'Cycling-specific strength reduces injury risk and improves power transfer. Single-leg stability, glute dominance, core endurance transfer directly to pedaling.',
+    desc:'50min | Single-leg, glutes, core. No bilateral squats until post-Megre Aug 1.',
+    goal:'Cycling-specific strength: glute dominance, single-leg stability, core endurance. Directly transfers to pedaling power and injury prevention.',
     steps:[
-      {type:'warmup',label:'Activation',dur:5,text:'Hip circles 10x each direction. Leg swings 10x each leg. Glute bridges 15x. Clamshells 12x each side.'},
-      {type:'work',label:'Strength — 3 Rounds',text:'Bulgarian Split Squat: 3×10 each leg\nSingle Leg Press: 3×12 each leg\nRomanian Deadlift: 3×10 at 60–70%\nHip Thrust: 3×15\nCopenhagen Plank: 3×20sec each side'},
-      {type:'work',label:'Core — 2 Rounds',text:'Dead Bug: 10 reps\nSingle Leg Glute Bridge: 15 each\nBird Dog: 10 each\nPallof Press: 12 each side'},
-      {type:'cooldown',label:'Mobility',text:'Hip flexor: 2min each side\nHamstring: 90sec each\nPigeon: 90sec each\nThoracic rotation: 10 each side'}]}
+      {type:'warmup',label:'Activation',dur:5,text:'Hip circles 10x each. Leg swings 10x each. Glute bridges 15x. Clamshells 12x each.'},
+      {type:'work',label:'Strength — 3 Rounds',text:'Bulgarian Split Squat: 3×10 each leg\nSingle Leg Press: 3×12 each leg\nRomanian Deadlift: 3×10 at 60–70%\nHip Thrust: 3×15\nCopenhagen Plank: 3×20sec each'},
+      {type:'work',label:'Core — 2 Rounds',text:'Dead Bug: 10\nSingle Leg Glute Bridge: 15 each\nBird Dog: 10 each\nPallof Press: 12 each'},
+      {type:'cooldown',label:'Mobility',text:'Hip flexor: 2min each\nHamstring: 90sec each\nPigeon: 90sec each\nThoracic rotation: 10 each'}]}
 };
 const DAYS=['MON','TUE','WED','THU','FRI','SAT','SUN'];
 let weekOff=0;
@@ -1324,9 +1414,9 @@ async function buildCards(){
         <button class="tog ${st.on?'on':''}" onclick="togDay('${day}')"></button>
         <span class="dname">${day}</span>
         <span class="ddate" style="font-size:10px">${fd(dates[i])}</span>
-        <select class="dsel" onchange="setS('${day}',this.value)" ${!st.on?'disabled':''}>
-          ${opts.replace(`value="${st.s}"`,`value="${st.s}" selected`)}
-        </select>
+        <button onclick="openLibrary('${day}')" style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;padding:7px 10px;font-size:12px;color:${s&&s.color?s.color:'var(--txt3)'};font-family:'Barlow',sans-serif;font-weight:700;cursor:pointer;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:border-color .15s" ${!st.on?'disabled':''} title="Click to change session">
+          ${st.s==='rest'?'Rest Day':s?s.label:'Choose session...'}
+        </button>
       </div>
       ${info}${stepsHtml}${actualHtml}${pushBtn}
     </div>`;
@@ -1352,32 +1442,81 @@ function dragDrop(e,toDay){
   dragFrom=null;
 }
 
-// ── WORKOUT LIBRARY MODAL ─────────────────────────────────────────────
-function openLibrary(){
-  const cats=['Endurance','Tempo','Sweet Spot','Threshold','Gym'];
-  const catColors={Endurance:'#22c55e',Tempo:'#f59e0b','Sweet Spot':'#f97316',Threshold:'#E01A22',Gym:'#8b5cf6'};
+// ── WORKOUT LIBRARY / SESSION PICKER ─────────────────────────────────
+let libDay=null, libCat='All', libDur=0;
+
+function openLibrary(day=null){
+  libDay=day;
+  document.getElementById('lib-day-label').textContent=day?`Assigning to ${day} — click any session to add it`:'Browse all sessions — click to view details';
+  document.getElementById('lib-search').value='';
+  setCat('All',false);
+  setDur(0,false);
+  filterLibrary();
+  document.getElementById('lib-modal').style.display='block';
+  setTimeout(()=>document.getElementById('lib-search').focus(),100);
+}
+
+function closeLibrary(){document.getElementById('lib-modal').style.display='none';libDay=null;}
+
+function setCat(cat,render=true){
+  libCat=cat;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.toggle('active',b.textContent.includes(cat)||(cat==='All'&&b.textContent==='All')));
+  if(render)filterLibrary();
+}
+
+function setDur(dur,render=true){
+  libDur=dur;
+  document.querySelectorAll('.dur-btn').forEach(b=>b.classList.toggle('active',parseInt(b.textContent)===dur||(dur===0&&b.textContent==='Any')));
+  if(render)filterLibrary();
+}
+
+function filterLibrary(){
+  const q=document.getElementById('lib-search').value.toLowerCase().trim();
+  const catColors={Activation:'#06b6d4',Endurance:'#22c55e',Tempo:'#f59e0b','Sweet Spot':'#f97316',Threshold:'#E01A22','VO2 Max':'#8b5cf6',Anaerobic:'#c026d3',Gym:'#8b5cf6',Rest:'#505060'};
+
+  const entries=Object.entries(SESS).filter(([k,s])=>{
+    if(k==='rest')return false;
+    if(libCat!=='All'&&s.cat!==libCat)return false;
+    if(libDur===150&&s.mins<150)return false;
+    if(libDur>0&&libDur<150&&Math.abs(s.mins-libDur)>7)return false;
+    if(q&&!s.label.toLowerCase().includes(q)&&!s.desc.toLowerCase().includes(q)&&!s.cat.toLowerCase().includes(q))return false;
+    return true;
+  });
+
+  document.getElementById('lib-count').textContent=`${entries.length} session${entries.length!==1?'s':''}`;
+
+  // Group by category
+  const groups={};
+  entries.forEach(([k,s])=>{
+    if(!groups[s.cat])groups[s.cat]=[];
+    groups[s.cat].push([k,s]);
+  });
+
+  const catOrder=['Activation','Endurance','Tempo','Sweet Spot','Threshold','VO2 Max','Anaerobic','Gym'];
   let html='';
-  cats.forEach(cat=>{
-    const sessions=Object.entries(SESS).filter(([k,v])=>v.cat===cat);
-    if(!sessions.length)return;
-    html+=`<div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.08em;margin:20px 0 10px">${cat}</div>`;
-    sessions.forEach(([key,s])=>{
-      html+=`<div onclick="openDetail('${key}')" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:4px;height:44px;background:${s.color};border-radius:2px;flex-shrink:0"></div>
-          <div style="flex:1">
-            <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:3px">${s.label}</div>
-            <div style="font-size:11px;color:var(--txt3)">${s.tss?s.tss+' TSS · ':''} ${s.mins?s.mins+'min · ':''} ${s.desc.slice(0,60)}…</div>
-          </div>
-          <div style="font-size:11px;color:var(--txt3)">→</div>
+  catOrder.forEach(cat=>{
+    if(!groups[cat])return;
+    html+=`<div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:${catColors[cat]||'#fff'};text-transform:uppercase;letter-spacing:.1em;margin:14px 0 6px;padding-left:4px">${cat}</div>`;
+    groups[cat].forEach(([key,s])=>{
+      const onclk=libDay?`assignToDay('${key}','${libDay}')`:`openDetail('${key}')`;
+      html+=`<div onclick="${onclk}" style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:11px 14px;cursor:pointer;transition:border-color .12s;display:flex;align-items:center;gap:12px" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="width:3px;height:40px;background:${s.color};border-radius:2px;flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.label}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.desc.split('|').slice(1).join('|').trim()||s.desc}</div>
         </div>
+        <div style="text-align:right;flex-shrink:0">
+          ${s.mins?`<div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#fff">${s.mins}<span style="font-size:10px;font-weight:400;color:var(--txt3)">min</span></div>`:''}
+          ${s.tss?`<div style="font-size:10px;color:var(--txt3)">${s.tss} TSS</div>`:''}
+        </div>
+        <div style="font-size:14px;color:var(--txt3);flex-shrink:0">${libDay?'+ Add':'→'}</div>
       </div>`;
     });
   });
+
+  if(!html)html='<div style="text-align:center;padding:30px;color:var(--txt3);font-size:13px">No sessions match your filters</div>';
   document.getElementById('lib-content').innerHTML=html;
-  document.getElementById('lib-modal').style.display='block';
 }
-function closeLibrary(){document.getElementById('lib-modal').style.display='none';}
 
 // ── SESSION DETAIL MODAL ──────────────────────────────────────────────
 function openDetail(key){
@@ -1442,10 +1581,10 @@ function openDetail(key){
 function closeDetail(){document.getElementById('det-modal').style.display='none';}
 
 function assignToDay(sessKey,day){
-  DS[day]={on:true,s:sessKey};
+  DS[day]={on:sessKey!=='rest',s:sessKey};
+  closeLibrary();
   closeDetail();
   buildCards();
-  showTab('builder');
 }
 
 // ── PUSH SINGLE DAY ───────────────────────────────────────────────────
