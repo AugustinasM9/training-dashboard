@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Augustinas Training Dashboard — Cloud Ready + Password Protected
+Training Dashboard — Login + API Proxy
 """
 import http.server, urllib.request, urllib.error, urllib.parse
 import base64, json, os, sys, secrets, time
@@ -14,125 +14,65 @@ PORT          = int(os.environ.get('PORT', 8080))
 SCRIPT_DIR    = os.path.dirname(os.path.abspath(__file__))
 HTML_PATH     = os.path.join(SCRIPT_DIR, 'dashboard.html')
 
-# In-memory sessions: token -> expiry timestamp
 SESSIONS = {}
-SESSION_TTL = 7 * 24 * 3600  # 7 days
+SESSION_TTL = 7 * 24 * 3600
 
 def clean_sessions():
     now = time.time()
-    expired = [t for t, exp in SESSIONS.items() if now > exp]
-    for t in expired:
-        del SESSIONS[t]
+    for t in list(SESSIONS.keys()):
+        if now > SESSIONS[t]:
+            del SESSIONS[t]
 
 def valid_session(token):
     clean_sessions()
     return token and token in SESSIONS and time.time() < SESSIONS[token]
 
 LOGIN_HTML = '''<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Training Dashboard — Login</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Barlow',sans-serif;background:#111114;color:#e8e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Barlow',sans-serif;background:#111114;color:#e8e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .box{background:#18181c;border:1px solid #2a2a35;border-radius:12px;padding:40px 36px;width:100%;max-width:360px}
-.logo{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#fff;letter-spacing:.06em;text-align:center;margin-bottom:6px}
-.logo span{color:#E01A22}
+.logo{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#fff;letter-spacing:.06em;text-align:center;margin-bottom:6px}.logo span{color:#E01A22}
 .sub{text-align:center;font-size:12px;color:#505060;margin-bottom:32px;letter-spacing:.04em;text-transform:uppercase}
 label{display:block;font-size:11px;font-weight:700;color:#9090a0;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
 input{width:100%;background:#111114;border:1px solid #2a2a35;border-radius:6px;padding:12px 14px;font-size:14px;color:#e8e8f0;font-family:'Barlow',sans-serif;outline:none;margin-bottom:20px;transition:border-color .15s}
-input:focus{border-color:#E01A22}
-input:disabled{opacity:0.5;cursor:not-allowed}
+input:focus{border-color:#E01A22}input:disabled{opacity:0.5;cursor:not-allowed}
 button{width:100%;background:#E01A22;border:none;color:#fff;padding:13px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;letter-spacing:.06em;text-transform:uppercase;transition:background .15s}
-button:hover:not(:disabled){background:#c01218}
-button:disabled{opacity:0.6;cursor:not-allowed}
-.msg{font-size:12px;text-align:center;margin-top:12px;display:none;padding:10px;border-radius:5px}
-.err{background:rgba(224,26,34,.15);border:1px solid #E01A22;color:#E01A22}
-.ok{background:rgba(34,197,94,.15);border:1px solid #22c55e;color:#22c55e}
-.info{font-size:11px;color:#505060;margin-top:16px;padding-top:16px;border-top:1px solid #2a2a35;text-align:center}
-</style>
-</head>
-<body>
-<div class="box">
-  <div class="logo">TRAIN<span>ER</span></div>
-  <div class="sub">Personal Training Dashboard</div>
-  <label for="pw">Password</label>
-  <input type="password" id="pw" placeholder="Enter password" autocomplete="off" onkeydown="if(event.key==='Enter'&&!document.getElementById('btn').disabled)login()">
-  <button id="btn" onclick="login()">Sign In</button>
-  <div id="msg" class="msg"></div>
-  <div class="info">Password set in Render environment variables</div>
-</div>
+button:hover:not(:disabled){background:#c01218}button:disabled{opacity:0.6;cursor:not-allowed}
+.msg{font-size:12px;text-align:center;margin-top:12px;display:none;padding:10px;border-radius:5px}.err{background:rgba(224,26,34,.15);border:1px solid #E01A22;color:#E01A22}
+.ok{background:rgba(34,197,94,.15);border:1px solid #22c55e;color:#22c55e}.info{font-size:11px;color:#505060;margin-top:16px;padding-top:16px;border-top:1px solid #2a2a35;text-align:center}
+</style></head><body>
+<div class="box"><div class="logo">TRAIN<span>ER</span></div><div class="sub">Personal Training Dashboard</div>
+<label for="pw">Password</label>
+<input type="password" id="pw" placeholder="Enter password" autocomplete="off" onkeydown="if(event.key==='Enter'&&!document.getElementById('btn').disabled)login()">
+<button id="btn" onclick="login()">Sign In</button><div id="msg" class="msg"></div>
+<div class="info">Check Render logs for password status</div></div>
 <script>
-async function login(){
-  const pw=document.getElementById('pw').value;
-  const btn=document.getElementById('btn');
-  const msg=document.getElementById('msg');
-  
-  if(!pw){
-    showMsg('Please enter a password','err');
-    return;
-  }
-  
-  btn.disabled=true;
-  btn.textContent='Signing in...';
-  msg.className='msg';
-  msg.textContent='';
-  
-  try{
-    const res=await fetch('/login',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({password:pw})
-    });
-    
-    const data=await res.json();
-    
-    if(res.ok&&data.token){
-      showMsg('✓ Success! Redirecting...','ok');
-      // Store as cookie so server can read it
-      const exp=new Date();
-      exp.setTime(exp.getTime()+(7*24*60*60*1000));
-      document.cookie='dash_token='+data.token+';path=/;expires='+exp.toUTCString()+';SameSite=Strict';
-      localStorage.setItem('dash_token',data.token);
-      setTimeout(()=>location.href='/',200);
-    }else{
-      showMsg('✗ Incorrect password','err');
-      btn.disabled=false;
-      btn.textContent='Sign In';
-      document.getElementById('pw').select();
-    }
-  }catch(e){
-    console.error('Login error:',e);
-    showMsg('✗ Connection error: '+e.message,'err');
-    btn.disabled=false;
-    btn.textContent='Sign In';
-  }
-}
-
-function showMsg(txt,cls){
-  const msg=document.getElementById('msg');
-  msg.textContent=txt;
-  msg.className='msg '+cls;
-  msg.style.display='block';
-}
-</script>
-</body>
-</html>'''
+async function login(){const pw=document.getElementById('pw').value;const btn=document.getElementById('btn');const msg=document.getElementById('msg');
+if(!pw){showMsg('Please enter a password','err');return;}
+btn.disabled=true;btn.textContent='Signing in...';msg.className='msg';msg.textContent='';
+try{const res=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+const data=await res.json();
+if(res.ok&&data.token){showMsg('✓ Success! Redirecting...','ok');
+const exp=new Date();exp.setTime(exp.getTime()+(7*24*60*60*1000));
+document.cookie='dash_token='+data.token+';path=/;expires='+exp.toUTCString();
+localStorage.setItem('dash_token',data.token);
+setTimeout(()=>location.href='/',300);}else{
+showMsg('✗ Incorrect password','err');btn.disabled=false;btn.textContent='Sign In';document.getElementById('pw').select();}}
+catch(e){console.error('Login error:',e);showMsg('✗ Connection error: '+e.message,'err');btn.disabled=false;btn.textContent='Sign In';}}
+function showMsg(txt,cls){const msg=document.getElementById('msg');msg.textContent=txt;msg.className='msg '+cls;msg.style.display='block';}
+</script></body></html>'''
 
 class Handler(http.server.BaseHTTPRequestHandler):
-
     def log_message(self, fmt, *args):
         print(f'  {self.command} {self.path}')
 
     def get_token(self):
-        # Check Authorization header first
         auth = self.headers.get('X-Dash-Token', '')
         if auth:
             return auth
-        # Check cookie
         cookie = self.headers.get('Cookie', '')
         for part in cookie.split(';'):
             part = part.strip()
@@ -141,7 +81,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         return ''
 
     def send_json(self, code, data):
-        body = data if isinstance(data, bytes) else json.dumps(data).encode()
+        body = json.dumps(data).encode()
         self.send_response(code)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -156,15 +96,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def proxy_icu(self, method, body=None):
-        parsed   = urllib.parse.urlparse(self.path)
+        parsed = urllib.parse.urlparse(self.path)
         api_path = parsed.path[4:]
-        qs       = ('?' + parsed.query) if parsed.query else ''
-        url      = f'https://intervals.icu/api/v1/athlete/{ATHLETE_ID}{api_path}{qs}'
-        req      = urllib.request.Request(url, data=body, method=method)
+        qs = ('?' + parsed.query) if parsed.query else ''
+        url = f'https://intervals.icu/api/v1/athlete/{ATHLETE_ID}{api_path}{qs}'
+        req = urllib.request.Request(url, data=body, method=method)
         req.add_header('Authorization', f'Basic {AUTH}')
         req.add_header('Accept', 'application/json')
-        req.add_header('Content-Type', 'application/json')
-        req.add_header('User-Agent', 'Mozilla/5.0')
+        if body:
+            req.add_header('Content-Type', 'application/json')
         try:
             with urllib.request.urlopen(req, timeout=15) as r:
                 self.send_json(r.status, r.read())
@@ -177,10 +117,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if not ANTHROPIC_KEY:
             self.send_json(500, {'error': 'ANTHROPIC_KEY not set'})
             return
-        req = urllib.request.Request(
-            'https://api.anthropic.com/v1/messages',
-            data=body, method='POST'
-        )
+        req = urllib.request.Request('https://api.anthropic.com/v1/messages', data=body, method='POST')
         req.add_header('x-api-key', ANTHROPIC_KEY)
         req.add_header('anthropic-version', '2023-06-01')
         req.add_header('Content-Type', 'application/json')
@@ -197,32 +134,21 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type,X-Dash-Token,Authorization')
-        self.send_header('Access-Control-Allow-Credentials', 'true')
         self.end_headers()
 
     def do_GET(self):
-        # Login page — no auth needed
         if self.path == '/login':
             self.send_html(LOGIN_HTML)
             return
-
-        # API calls — check auth
         if self.path.startswith('/api/'):
-            token = self.get_token()
-            if not valid_session(token):
+            if not valid_session(self.get_token()):
                 self.send_json(401, {'error': 'Unauthorized'})
                 return
             self.proxy_icu('GET')
             return
-
-        # Dashboard — check auth, redirect to login if not
-        token = self.get_token()
-        if not valid_session(token):
-            print(f'  ℹ No valid token, serving login page')
+        if not valid_session(self.get_token()):
             self.send_html(LOGIN_HTML)
             return
-
-        print(f'  ✓ Valid session, serving dashboard')
         try:
             with open(HTML_PATH, 'rb') as f:
                 data = f.read()
@@ -239,30 +165,26 @@ class Handler(http.server.BaseHTTPRequestHandler):
         n = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(n) if n else b''
 
-        # Login endpoint — no auth needed
         if self.path == '/login':
             try:
                 data = json.loads(body)
                 pwd = str(data.get('password', '')).strip()
-                expected = PASSWORD.strip() if PASSWORD else ''
+                pwd_expected = PASSWORD.strip()
+                print(f'\n  [LOGIN] password received: len={len(pwd)}, expected: len={len(pwd_expected)}')
                 
-                if pwd and expected and pwd == expected:
+                if pwd == pwd_expected:
                     token = secrets.token_hex(32)
                     SESSIONS[token] = time.time() + SESSION_TTL
-                    print(f'  ✓ Login successful, token created: {token[:8]}...')
+                    print(f'  [LOGIN] ✓ SUCCESS - token created\n')
                     self.send_json(200, {'token': token})
                 else:
-                    if not pwd:
-                        print(f'  ✗ Login attempt: empty password')
-                    else:
-                        print(f'  ✗ Login attempt: wrong password (got {len(pwd)} chars, expected {len(expected)})')
+                    print(f'  [LOGIN] ✗ FAILED - password mismatch\n')
                     self.send_json(401, {'error': 'Wrong password'})
             except Exception as e:
-                print(f'  ✗ Login error: {e}')
+                print(f'  [LOGIN] ✗ ERROR - {e}\n')
                 self.send_json(400, {'error': 'Bad request'})
             return
 
-        # Logout
         if self.path == '/logout':
             token = self.get_token()
             if token in SESSIONS:
@@ -270,7 +192,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_json(200, {'ok': True})
             return
 
-        # All other POST endpoints need auth
         if not valid_session(self.get_token()):
             self.send_json(401, {'error': 'Unauthorized'})
             return
@@ -292,21 +213,12 @@ if __name__ == '__main__':
     if not os.path.exists(HTML_PATH):
         print(f'ERROR: dashboard.html not found in {SCRIPT_DIR}')
         sys.exit(1)
-    
     print(f'\n{"="*60}')
-    print(f'Dashboard running at http://localhost:{PORT}')
-    print(f'{"="*60}')
-    if PASSWORD:
-        pwd_display = PASSWORD[:3] + '*' * (len(PASSWORD) - 3) if len(PASSWORD) > 3 else '*' * len(PASSWORD)
-        print(f'✓ Password protection: ON (password: {pwd_display})')
-    else:
-        print(f'✗ WARNING: No password set! Set DASHBOARD_PASSWORD env var.')
-    print(f'  Session TTL: {SESSION_TTL // 3600} hours')
+    print(f'✓ Dashboard running at http://localhost:{PORT}')
+    print(f'✓ Password: {"SET" if PASSWORD else "NOT SET (using default)"}')
     print(f'{"="*60}\n')
-    
     server = http.server.HTTPServer(('0.0.0.0', PORT), Handler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print('\nStopped.')
-
