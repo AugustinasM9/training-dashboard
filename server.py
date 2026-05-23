@@ -37,7 +37,7 @@ LOGIN_HTML = '''<!DOCTYPE html>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Barlow',sans-serif;background:#111114;color:#e8e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh}
+body{font-family:'Barlow',sans-serif;background:#111114;color:#e8e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .box{background:#18181c;border:1px solid #2a2a35;border-radius:12px;padding:40px 36px;width:100%;max-width:360px}
 .logo{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#fff;letter-spacing:.06em;text-align:center;margin-bottom:6px}
 .logo span{color:#E01A22}
@@ -45,26 +45,78 @@ body{font-family:'Barlow',sans-serif;background:#111114;color:#e8e8f0;display:fl
 label{display:block;font-size:11px;font-weight:700;color:#9090a0;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
 input{width:100%;background:#111114;border:1px solid #2a2a35;border-radius:6px;padding:12px 14px;font-size:14px;color:#e8e8f0;font-family:'Barlow',sans-serif;outline:none;margin-bottom:20px;transition:border-color .15s}
 input:focus{border-color:#E01A22}
+input:disabled{opacity:0.5;cursor:not-allowed}
 button{width:100%;background:#E01A22;border:none;color:#fff;padding:13px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;letter-spacing:.06em;text-transform:uppercase;transition:background .15s}
-button:hover{background:#c01218}
-.err{color:#E01A22;font-size:12px;text-align:center;margin-top:12px;display:none}
+button:hover:not(:disabled){background:#c01218}
+button:disabled{opacity:0.6;cursor:not-allowed}
+.msg{font-size:12px;text-align:center;margin-top:12px;display:none;padding:10px;border-radius:5px}
+.err{background:rgba(224,26,34,.15);border:1px solid #E01A22;color:#E01A22}
+.ok{background:rgba(34,197,94,.15);border:1px solid #22c55e;color:#22c55e}
+.info{font-size:11px;color:#505060;margin-top:16px;padding-top:16px;border-top:1px solid #2a2a35;text-align:center}
 </style>
 </head>
 <body>
 <div class="box">
   <div class="logo">TRAIN<span>ER</span></div>
   <div class="sub">Personal Training Dashboard</div>
-  <label>Password</label>
-  <input type="password" id="pw" placeholder="Enter password" onkeydown="if(event.key==='Enter')login()">
-  <button onclick="login()">Sign In</button>
-  <div class="err" id="err">Incorrect password</div>
+  <label for="pw">Password</label>
+  <input type="password" id="pw" placeholder="Enter password" autocomplete="off" onkeydown="if(event.key==='Enter'&&!document.getElementById('btn').disabled)login()">
+  <button id="btn" onclick="login()">Sign In</button>
+  <div id="msg" class="msg"></div>
+  <div class="info">Password set in Render environment variables</div>
 </div>
 <script>
 async function login(){
   const pw=document.getElementById('pw').value;
-  const r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
-  if(r.ok){const d=await r.json();localStorage.setItem('dash_token',d.token);location.reload();}
-  else{document.getElementById('err').style.display='block';}
+  const btn=document.getElementById('btn');
+  const msg=document.getElementById('msg');
+  
+  if(!pw){
+    showMsg('Please enter a password','err');
+    return;
+  }
+  
+  btn.disabled=true;
+  btn.textContent='Signing in...';
+  msg.className='msg';
+  msg.textContent='';
+  
+  try{
+    const res=await fetch('/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password:pw})
+    });
+    
+    const data=await res.json();
+    
+    if(res.ok&&data.token){
+      showMsg('✓ Success! Redirecting...','ok');
+      // Store as cookie so server can read it
+      const exp=new Date();
+      exp.setTime(exp.getTime()+(7*24*60*60*1000));
+      document.cookie='dash_token='+data.token+';path=/;expires='+exp.toUTCString()+';SameSite=Strict';
+      localStorage.setItem('dash_token',data.token);
+      setTimeout(()=>location.href='/',200);
+    }else{
+      showMsg('✗ Incorrect password','err');
+      btn.disabled=false;
+      btn.textContent='Sign In';
+      document.getElementById('pw').select();
+    }
+  }catch(e){
+    console.error('Login error:',e);
+    showMsg('✗ Connection error: '+e.message,'err');
+    btn.disabled=false;
+    btn.textContent='Sign In';
+  }
+}
+
+function showMsg(txt,cls){
+  const msg=document.getElementById('msg');
+  msg.textContent=txt;
+  msg.className='msg '+cls;
+  msg.style.display='block';
 }
 </script>
 </body>
@@ -144,7 +196,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type,X-Dash-Token')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type,X-Dash-Token,Authorization')
+        self.send_header('Access-Control-Allow-Credentials', 'true')
         self.end_headers()
 
     def do_GET(self):
@@ -155,17 +208,21 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
         # API calls — check auth
         if self.path.startswith('/api/'):
-            if not valid_session(self.get_token()):
+            token = self.get_token()
+            if not valid_session(token):
                 self.send_json(401, {'error': 'Unauthorized'})
                 return
             self.proxy_icu('GET')
             return
 
         # Dashboard — check auth, redirect to login if not
-        if not valid_session(self.get_token()):
+        token = self.get_token()
+        if not valid_session(token):
+            print(f'  ℹ No valid token, serving login page')
             self.send_html(LOGIN_HTML)
             return
 
+        print(f'  ✓ Valid session, serving dashboard')
         try:
             with open(HTML_PATH, 'rb') as f:
                 data = f.read()
@@ -186,13 +243,22 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if self.path == '/login':
             try:
                 data = json.loads(body)
-                if data.get('password') == PASSWORD:
+                pwd = str(data.get('password', '')).strip()
+                expected = PASSWORD.strip() if PASSWORD else ''
+                
+                if pwd and expected and pwd == expected:
                     token = secrets.token_hex(32)
                     SESSIONS[token] = time.time() + SESSION_TTL
+                    print(f'  ✓ Login successful, token created: {token[:8]}...')
                     self.send_json(200, {'token': token})
                 else:
+                    if not pwd:
+                        print(f'  ✗ Login attempt: empty password')
+                    else:
+                        print(f'  ✗ Login attempt: wrong password (got {len(pwd)} chars, expected {len(expected)})')
                     self.send_json(401, {'error': 'Wrong password'})
-            except Exception:
+            except Exception as e:
+                print(f'  ✗ Login error: {e}')
                 self.send_json(400, {'error': 'Bad request'})
             return
 
@@ -226,10 +292,21 @@ if __name__ == '__main__':
     if not os.path.exists(HTML_PATH):
         print(f'ERROR: dashboard.html not found in {SCRIPT_DIR}')
         sys.exit(1)
+    
+    print(f'\n{"="*60}')
     print(f'Dashboard running at http://localhost:{PORT}')
-    print(f'Password protection: {"ON" if PASSWORD else "OFF (set DASHBOARD_PASSWORD env var)"}')
+    print(f'{"="*60}')
+    if PASSWORD:
+        pwd_display = PASSWORD[:3] + '*' * (len(PASSWORD) - 3) if len(PASSWORD) > 3 else '*' * len(PASSWORD)
+        print(f'✓ Password protection: ON (password: {pwd_display})')
+    else:
+        print(f'✗ WARNING: No password set! Set DASHBOARD_PASSWORD env var.')
+    print(f'  Session TTL: {SESSION_TTL // 3600} hours')
+    print(f'{"="*60}\n')
+    
     server = http.server.HTTPServer(('0.0.0.0', PORT), Handler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print('\nStopped.')
+
