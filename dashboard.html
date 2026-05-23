@@ -528,7 +528,9 @@ async function logout(){
   const token=localStorage.getItem('dash_token')||'';
   await fetch('/logout',{method:'POST',headers:{'X-Dash-Token':token}});
   localStorage.removeItem('dash_token');
-  location.reload();
+  // Clear cookie
+  document.cookie='dash_token=;path=/;expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+  location.href='/';
 }
 function daysAgo(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
 function fd(s){return new Date(s).toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
