@@ -832,17 +832,6 @@ async function loadWellness() {
     }
   });
   
-  // Career stats
-  const totalRides = data.length;
-  const totalHours = Math.round(data.reduce((sum, a) => sum + (a.moving_time || 0), 0) / 3600);
-  const totalTss = Math.round(data.reduce((sum, a) => sum + (a.icu_training_load || 0), 0));
-  const avgDur = Math.round(totalHours / totalRides * 60);
-  
-  document.getElementById('career-rides').textContent = totalRides;
-  document.getElementById('career-hours').textContent = totalHours + 'h';
-  document.getElementById('career-tss').textContent = totalTss.toLocaleString();
-  document.getElementById('career-avg').textContent = avgDur + 'min';
-  
   return data;
 }
 
