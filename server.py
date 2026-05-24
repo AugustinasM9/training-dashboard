@@ -22,6 +22,11 @@ def proxy_icu(api_path, query, method='GET', body=None):
     req = urllib.request.Request(url, method=method)
     req.add_header('Authorization', f'Basic {AUTH_HEADER}')
     req.add_header('Accept', 'application/json')
+    req.add_header('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+    req.add_header('Accept-Language', 'en-US,en;q=0.9')
+    req.add_header('Accept-Encoding', 'gzip, deflate, br')
+    req.add_header('Referer', 'https://intervals.icu/')
+    req.add_header('Origin', 'https://intervals.icu')
     if body:
         req.data = body
         req.add_header('Content-Type', 'application/json')
@@ -29,6 +34,10 @@ def proxy_icu(api_path, query, method='GET', body=None):
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
             raw = r.read()
+            # Handle gzip if needed
+            if r.headers.get('Content-Encoding') == 'gzip':
+                import gzip
+                raw = gzip.decompress(raw)
             print(f'  ← ICU: {r.status} ({len(raw)} bytes)', flush=True)
             try:
                 return r.status, json.loads(raw)
