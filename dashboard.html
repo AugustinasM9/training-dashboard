@@ -302,29 +302,114 @@ body {
   <!-- CAREER TAB -->
   <div class="tab" id="tab-career">
     <div class="card" style="margin-bottom: 16px;">
-      <div class="card-hdr">Career Overview</div>
-      <div class="metrics-grid" style="margin-top: 16px;">
-        <div>
-          <div class="metric-val" id="career-rides">--</div>
-          <div class="metric-label">Total Rides</div>
+      <div class="card-hdr">Power Profile — Peak Powers</div>
+      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-top: 16px;">
+        <div style="text-align: center;">
+          <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;" id="peak-5s">--</div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase;">5 Sec Sprint</div>
+          <div style="font-size: 10px; color: var(--txt2); margin-top: 2px;" id="peak-5s-wkg">-- W/kg</div>
         </div>
-        <div>
-          <div class="metric-val" id="career-hours">--</div>
-          <div class="metric-label">Total Hours</div>
+        <div style="text-align: center;">
+          <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;" id="peak-1m">--</div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase;">1 Min Anaerobic</div>
+          <div style="font-size: 10px; color: var(--txt2); margin-top: 2px;" id="peak-1m-wkg">-- W/kg</div>
         </div>
-        <div>
-          <div class="metric-val" id="career-tss">--</div>
-          <div class="metric-label">Total TSS</div>
+        <div style="text-align: center;">
+          <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;" id="peak-5m">--</div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase;">5 Min VO2 Max</div>
+          <div style="font-size: 10px; color: var(--txt2); margin-top: 2px;" id="peak-5m-wkg">-- W/kg</div>
         </div>
-        <div>
-          <div class="metric-val" id="career-avg">--</div>
-          <div class="metric-label">Avg Ride Duration</div>
+        <div style="text-align: center;">
+          <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;" id="peak-20m">--</div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase;">20 Min Threshold</div>
+          <div style="font-size: 10px; color: var(--txt2); margin-top: 2px;" id="peak-20m-wkg">-- W/kg</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;" id="peak-60m">--</div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase;">60 Min Sweet Spot</div>
+          <div style="font-size: 10px; color: var(--txt2); margin-top: 2px;" id="peak-60m-wkg">-- W/kg</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px; color: var(--red);">${FTP}W</div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase;">FTP</div>
+          <div style="font-size: 10px; color: var(--txt2); margin-top: 2px;">${(FTP/98).toFixed(1)} W/kg</div>
         </div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-hdr">Power Profile</div>
-      <p style="color: var(--txt2); margin-top: 12px; font-size: 13px;">Critical power curve and best efforts coming soon.</p>
+    
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="card-hdr">Strengths & Weaknesses</div>
+        <div style="margin-top: 16px;">
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span style="font-size: 12px; font-weight: 600;">Sprint Power (5s)</span>
+              <span style="font-size: 12px; color: var(--txt2);" id="strength-sprint">--</span>
+            </div>
+            <div style="background: var(--bg3); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div id="bar-sprint" style="background: var(--red); height: 100%; width: 0%; transition: width .5s;"></div>
+            </div>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span style="font-size: 12px; font-weight: 600;">Anaerobic Capacity (1min)</span>
+              <span style="font-size: 12px; color: var(--txt2);" id="strength-anaer">--</span>
+            </div>
+            <div style="background: var(--bg3); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div id="bar-anaer" style="background: var(--orange); height: 100%; width: 0%; transition: width .5s;"></div>
+            </div>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span style="font-size: 12px; font-weight: 600;">VO2 Max (5min)</span>
+              <span style="font-size: 12px; color: var(--txt2);" id="strength-vo2">--</span>
+            </div>
+            <div style="background: var(--bg3); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div id="bar-vo2" style="background: var(--yellow); height: 100%; width: 0%; transition: width .5s;"></div>
+            </div>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span style="font-size: 12px; font-weight: 600;">Threshold (20min)</span>
+              <span style="font-size: 12px; color: var(--txt2);" id="strength-thresh">--</span>
+            </div>
+            <div style="background: var(--bg3); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div id="bar-thresh" style="background: var(--green); height: 100%; width: 0%; transition: width .5s;"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span style="font-size: 12px; font-weight: 600;">Sweet Spot (60min)</span>
+              <span style="font-size: 12px; color: var(--txt2);" id="strength-ss">--</span>
+            </div>
+            <div style="background: var(--bg3); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div id="bar-ss" style="background: var(--blue); height: 100%; width: 0%; transition: width .5s;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="chart-card">
+        <div class="card-hdr">All-Time Stats</div>
+        <div style="margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;" id="career-rides">--</div>
+            <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase;">Total Rides</div>
+          </div>
+          <div>
+            <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;" id="career-hours">--</div>
+            <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase;">Total Hours</div>
+          </div>
+          <div>
+            <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;" id="career-tss">--</div>
+            <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase;">Total TSS</div>
+          </div>
+          <div>
+            <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;" id="career-avg">--</div>
+            <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase;">Avg Ride Duration</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -392,6 +477,47 @@ body {
       </div>
       <div class="sess-tabs" id="sess-tabs"></div>
       <div class="sess-grid" id="sess-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SESSION DETAIL MODAL -->
+<div class="modal" id="sess-detail-modal">
+  <div class="modal-box" style="max-width: 700px;">
+    <div class="modal-hdr">
+      <div class="modal-title" id="detail-title">Session Details</div>
+      <button class="modal-close" onclick="closeSessDetail()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+        <div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase; margin-bottom: 4px;">Duration</div>
+          <div style="font-size: 20px; font-weight: 700;" id="detail-dur">--</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase; margin-bottom: 4px;">TSS</div>
+          <div style="font-size: 20px; font-weight: 700;" id="detail-tss">--</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase; margin-bottom: 4px;">Category</div>
+          <div style="font-size: 20px; font-weight: 700;" id="detail-cat">--</div>
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--txt2); text-transform: uppercase; margin-bottom: 8px;">Description</div>
+        <div style="font-size: 14px; line-height: 1.6;" id="detail-desc">--</div>
+      </div>
+      <div style="background: var(--bg3); padding: 14px; border-radius: 6px; margin-top: 16px;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--txt3); text-transform: uppercase; margin-bottom: 8px;">Power Zones (FTP ${FTP}W)</div>
+        <div style="font-size: 12px; line-height: 1.8; color: var(--txt2);">
+          Z2 Endurance: 189-209W<br>
+          Tempo: 263-280W<br>
+          Sweet Spot: 303-313W<br>
+          Threshold: 320-337W<br>
+          VO2 Max: 371-388W<br>
+          Anaerobic: 421W+
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -647,6 +773,69 @@ async function loadWellness() {
   return data;
 }
 
+async function loadPowerCurve() {
+  const data = await api('GET', '/power-curve');
+  if (!data || !data.data) return;
+  
+  const curve = data.data;
+  const weight = 98; // kg
+  
+  // Get peak powers at specific durations
+  const peaks = {
+    '5s': curve[4] || 0,      // 5 seconds
+    '1m': curve[59] || 0,     // 1 minute
+    '5m': curve[299] || 0,    // 5 minutes  
+    '20m': curve[1199] || 0,  // 20 minutes
+    '60m': curve[3599] || 0   // 60 minutes
+  };
+  
+  // Display peak powers
+  document.getElementById('peak-5s').textContent = Math.round(peaks['5s']) + 'W';
+  document.getElementById('peak-5s-wkg').textContent = (peaks['5s'] / weight).toFixed(1) + ' W/kg';
+  
+  document.getElementById('peak-1m').textContent = Math.round(peaks['1m']) + 'W';
+  document.getElementById('peak-1m-wkg').textContent = (peaks['1m'] / weight).toFixed(1) + ' W/kg';
+  
+  document.getElementById('peak-5m').textContent = Math.round(peaks['5m']) + 'W';
+  document.getElementById('peak-5m-wkg').textContent = (peaks['5m'] / weight).toFixed(1) + ' W/kg';
+  
+  document.getElementById('peak-20m').textContent = Math.round(peaks['20m']) + 'W';
+  document.getElementById('peak-20m-wkg').textContent = (peaks['20m'] / weight).toFixed(1) + ' W/kg';
+  
+  document.getElementById('peak-60m').textContent = Math.round(peaks['60m']) + 'W';
+  document.getElementById('peak-60m-wkg').textContent = (peaks['60m'] / weight).toFixed(1) + ' W/kg';
+  
+  // Calculate strengths (% of expected power for that duration)
+  const expectedFTP = {
+    '5s': FTP * 2.0,   // ~200% FTP for 5s sprint
+    '1m': FTP * 1.2,   // ~120% FTP for 1min
+    '5m': FTP * 1.05,  // ~105% FTP for 5min VO2
+    '20m': FTP * 0.95, // ~95% FTP for 20min
+    '60m': FTP * 0.85  // ~85% FTP for 60min
+  };
+  
+  const sprintPct = Math.min(100, (peaks['5s'] / expectedFTP['5s']) * 100);
+  const anaerPct = Math.min(100, (peaks['1m'] / expectedFTP['1m']) * 100);
+  const vo2Pct = Math.min(100, (peaks['5m'] / expectedFTP['5m']) * 100);
+  const threshPct = Math.min(100, (peaks['20m'] / expectedFTP['20m']) * 100);
+  const ssPct = Math.min(100, (peaks['60m'] / expectedFTP['60m']) * 100);
+  
+  document.getElementById('strength-sprint').textContent = Math.round(sprintPct) + '%';
+  document.getElementById('bar-sprint').style.width = sprintPct + '%';
+  
+  document.getElementById('strength-anaer').textContent = Math.round(anaerPct) + '%';
+  document.getElementById('bar-anaer').style.width = anaerPct + '%';
+  
+  document.getElementById('strength-vo2').textContent = Math.round(vo2Pct) + '%';
+  document.getElementById('bar-vo2').style.width = vo2Pct + '%';
+  
+  document.getElementById('strength-thresh').textContent = Math.round(threshPct) + '%';
+  document.getElementById('bar-thresh').style.width = threshPct + '%';
+  
+  document.getElementById('strength-ss').textContent = Math.round(ssPct) + '%';
+  document.getElementById('bar-ss').style.width = ssPct + '%';
+}
+
 async function loadActivities() {
   const data = await api('GET', '/activities?oldest=' + daysAgo(120) + '&newest=' + daysAgo(0));
   if (!data || !Array.isArray(data)) return null;
@@ -696,8 +885,8 @@ async function loadActivities() {
   list.innerHTML = recent.map(a => {
     const dur = Math.round((a.moving_time || 0) / 60);
     const tss = Math.round(a.icu_training_load || 0);
-    const np = Math.round(a.icu_normalized_power || 0);
-    const ap = Math.round(a.average_watts || 0);
+    const np = Math.round(a.icu_normalized_power || a.normalized_power || 0);
+    const ap = Math.round(a.average_watts || a.avg_watts || a.average_power || a.icu_average_watts || 0);
     return `
       <div class="act-row">
         <div class="act-date">${a.start_date_local?.slice(0, 10) || ''}</div>
@@ -716,7 +905,7 @@ async function loadActivities() {
 async function loadAll() {
   setStatus('', 'Connecting...');
   try {
-    await Promise.all([loadWellness(), loadActivities()]);
+    await Promise.all([loadWellness(), loadActivities(), loadPowerCurve()]);
     setStatus('ok', 'Connected · ' + new Date().toLocaleTimeString());
   } catch (e) {
     setStatus('err', 'Error: ' + e.message);
@@ -742,8 +931,9 @@ function buildWeekGrid() {
           <div class="day-toggle ${d.on ? 'on' : ''}" onclick="toggleDay('${day}', event)"></div>
         </div>
         ${sess ? `
-          <div class="day-sess" onclick="openSessPicker('${day}')">${sess.name}</div>
-          <div class="day-tss">${sess.dur}min · ${sess.tss} TSS</div>
+          <div class="day-sess" onclick="openSessDetail('${d.sess}')" style="margin-bottom: 4px;">${sess.name}</div>
+          <div class="day-tss" style="margin-bottom: 6px;">${sess.dur}min · ${sess.tss} TSS</div>
+          <div style="font-size: 10px; color: var(--txt3); cursor: pointer;" onclick="openSessPicker('${day}')">Change session</div>
         ` : `
           <div class="day-sess" onclick="openSessPicker('${day}')" style="color: var(--txt3);">+ Add Session</div>
         `}
@@ -767,6 +957,23 @@ function openSessPicker(day) {
 function closeSessPicker() {
   document.getElementById('sess-modal').classList.remove('show');
   currentPickDay = null;
+}
+
+function openSessDetail(sessKey) {
+  const s = SESS[sessKey];
+  if (!s) return;
+  
+  document.getElementById('detail-title').textContent = s.name;
+  document.getElementById('detail-dur').textContent = s.dur + ' min';
+  document.getElementById('detail-tss').textContent = s.tss + ' TSS';
+  document.getElementById('detail-cat').textContent = s.cat;
+  document.getElementById('detail-desc').textContent = s.desc;
+  
+  document.getElementById('sess-detail-modal').classList.add('show');
+}
+
+function closeSessDetail() {
+  document.getElementById('sess-detail-modal').classList.remove('show');
 }
 
 function buildSessLibrary() {
