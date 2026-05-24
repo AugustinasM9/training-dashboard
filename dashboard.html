@@ -328,7 +328,11 @@ let charts = {};
 
 async function loadWellness() {
   const data = await api('GET', '/wellness?oldest=' + daysAgo(60) + '&newest=' + daysAgo(0));
-  if (!data || !Array.isArray(data)) return null;
+  console.log('Wellness data:', data);
+  if (!data || !Array.isArray(data)) {
+    console.warn('Wellness not array:', data);
+    return null;
+  }
   
   const today = data[data.length - 1] || {};
   document.getElementById('m-ctl').textContent = Math.round(today.ctl || 0);
@@ -367,7 +371,11 @@ async function loadWellness() {
 
 async function loadActivities() {
   const data = await api('GET', '/activities?oldest=' + daysAgo(120) + '&newest=' + daysAgo(0));
-  if (!data || !Array.isArray(data)) return null;
+  console.log('Activities data:', data?.length, 'activities, sample:', data?.[0]);
+  if (!data || !Array.isArray(data)) {
+    console.warn('Activities not array:', data);
+    return null;
+  }
   
   // Calc week TSS
   const sevenDaysAgo = new Date();
