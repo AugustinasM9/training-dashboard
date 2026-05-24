@@ -106,7 +106,7 @@ body {
 
 .act-list { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
 .act-row {
-  display: grid; grid-template-columns: 100px 1fr 80px 80px 80px;
+  display: grid; grid-template-columns: 100px 1fr 80px 80px 70px 70px;
   gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border);
   align-items: center; font-size: 13px;
 }
@@ -265,21 +265,25 @@ body {
         <div class="card-hdr">Fitness CTL</div>
         <div class="metric-val" id="m-ctl">--</div>
         <div class="metric-label">Chronic Training Load</div>
+        <div style="font-size: 11px; color: var(--txt3); margin-top: 6px; line-height: 1.4;">42-day rolling avg of daily TSS. Higher = more fit.</div>
       </div>
       <div class="card">
         <div class="card-hdr">Fatigue ATL</div>
         <div class="metric-val" id="m-atl">--</div>
         <div class="metric-label">Acute Training Load</div>
+        <div style="font-size: 11px; color: var(--txt3); margin-top: 6px; line-height: 1.4;">7-day rolling avg of daily TSS. Higher = more fatigued.</div>
       </div>
       <div class="card">
         <div class="card-hdr">Form TSB</div>
         <div class="metric-val" id="m-tsb">--</div>
         <div class="metric-label">Training Stress Balance</div>
+        <div style="font-size: 11px; color: var(--txt3); margin-top: 6px; line-height: 1.4;">CTL - ATL. Positive = fresh, negative = fatigued.</div>
       </div>
       <div class="card">
         <div class="card-hdr">Week TSS</div>
         <div class="metric-val" id="m-wktss">--</div>
         <div class="metric-label">This Week</div>
+        <div style="font-size: 11px; color: var(--txt3); margin-top: 6px; line-height: 1.4;">Total training stress from last 7 days.</div>
       </div>
     </div>
 
@@ -297,9 +301,30 @@ body {
 
   <!-- CAREER TAB -->
   <div class="tab" id="tab-career">
-    <div class="card">
+    <div class="card" style="margin-bottom: 16px;">
       <div class="card-hdr">Career Overview</div>
-      <p style="color: var(--txt2); margin-top: 12px;">Power profile, all-time stats, and historical performance coming soon.</p>
+      <div class="metrics-grid" style="margin-top: 16px;">
+        <div>
+          <div class="metric-val" id="career-rides">--</div>
+          <div class="metric-label">Total Rides</div>
+        </div>
+        <div>
+          <div class="metric-val" id="career-hours">--</div>
+          <div class="metric-label">Total Hours</div>
+        </div>
+        <div>
+          <div class="metric-val" id="career-tss">--</div>
+          <div class="metric-label">Total TSS</div>
+        </div>
+        <div>
+          <div class="metric-val" id="career-avg">--</div>
+          <div class="metric-label">Avg Ride Duration</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">Power Profile</div>
+      <p style="color: var(--txt2); margin-top: 12px; font-size: 13px;">Critical power curve and best efforts coming soon.</p>
     </div>
   </div>
 
@@ -608,6 +633,17 @@ async function loadWellness() {
     }
   });
   
+  // Career stats
+  const totalRides = data.length;
+  const totalHours = Math.round(data.reduce((sum, a) => sum + (a.moving_time || 0), 0) / 3600);
+  const totalTss = Math.round(data.reduce((sum, a) => sum + (a.icu_training_load || 0), 0));
+  const avgDur = Math.round(totalHours / totalRides * 60);
+  
+  document.getElementById('career-rides').textContent = totalRides;
+  document.getElementById('career-hours').textContent = totalHours + 'h';
+  document.getElementById('career-tss').textContent = totalTss.toLocaleString();
+  document.getElementById('career-avg').textContent = avgDur + 'min';
+  
   return data;
 }
 
@@ -655,17 +691,20 @@ async function loadActivities() {
   });
   
   const list = document.getElementById('acts-list');
-  const recent = data.slice(-30).reverse();
+  const sorted = data.sort((a, b) => new Date(b.start_date_local) - new Date(a.start_date_local));
+  const recent = sorted.slice(0, 30);
   list.innerHTML = recent.map(a => {
     const dur = Math.round((a.moving_time || 0) / 60);
     const tss = Math.round(a.icu_training_load || 0);
     const np = Math.round(a.icu_normalized_power || 0);
+    const ap = Math.round(a.average_watts || 0);
     return `
       <div class="act-row">
         <div class="act-date">${a.start_date_local?.slice(0, 10) || ''}</div>
         <div class="act-name">${a.name || 'Ride'}</div>
         <div class="act-stat"><div class="v">${dur}m</div><div class="l">Dur</div></div>
         <div class="act-stat"><div class="v">${tss}</div><div class="l">TSS</div></div>
+        <div class="act-stat"><div class="v">${ap ? ap + 'W' : '--'}</div><div class="l">AP</div></div>
         <div class="act-stat"><div class="v">${np ? np + 'W' : '--'}</div><div class="l">NP</div></div>
       </div>
     `;
