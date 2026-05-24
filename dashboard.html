@@ -281,15 +281,26 @@ function logout() {
 
 async function api(method, path) {
   const token = localStorage.getItem('dash_token') || '';
+  if (!token) {
+    showLogin();
+    return null;
+  }
   const res = await fetch('/api' + path, {
     method,
     headers: { 'Authorization': 'Bearer ' + token }
   });
   if (res.status === 401) {
-    logout();
+    console.warn('401 - clearing token and showing login');
+    localStorage.removeItem('dash_token');
+    showLogin();
     return null;
   }
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) {
+    console.error('API error', res.status, path, data);
+    return null;
+  }
+  return data;
 }
 
 // ════════════════════════════════════════════════════════════════════════
