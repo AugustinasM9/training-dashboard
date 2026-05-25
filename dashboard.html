@@ -639,22 +639,38 @@ async function api(method, path) {
     showLogin();
     return null;
   }
-  const res = await fetch('/api' + path, {
-    method,
-    headers: { 'Authorization': 'Bearer ' + token }
-  });
-  if (res.status === 401) {
-    console.warn('401 - clearing token and showing login');
-    localStorage.removeItem('dash_token');
-    showLogin();
+  console.log(`[API] ${method} ${path}`);
+  try {
+    const res = await fetch('/api' + path, {
+      method,
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.status === 401) {
+      console.warn('[API] 401 - clearing token');
+      localStorage.removeItem('dash_token');
+      showLogin();
+      return null;
+    }
+    const text = await res.text();
+    if (!res.ok) {
+      console.error(`[API] ${res.status} error on ${path}:`, text.slice(0, 300));
+      setStatus('err', `API ${res.status}: ${path}`);
+      return null;
+    }
+    try {
+      const data = JSON.parse(text);
+      console.log(`[API] ${path} returned`, Array.isArray(data) ? `array of ${data.length}` : typeof data);
+      return data;
+    } catch (e) {
+      console.error(`[API] JSON parse failed for ${path}:`, text.slice(0, 300));
+      setStatus('err', `Bad JSON from ${path}`);
+      return null;
+    }
+  } catch (e) {
+    console.error(`[API] Fetch error on ${path}:`, e);
+    setStatus('err', `Fetch error: ${e.message}`);
     return null;
   }
-  const data = await res.json();
-  if (!res.ok) {
-    console.error('API error', res.status, path, data);
-    return null;
-  }
-  return data;
 }
 
 // ════════════════════════════════════════════════════════════════════════
