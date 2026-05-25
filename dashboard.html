@@ -301,143 +301,15 @@ body {
 
   <!-- CAREER TAB -->
   <div class="tab" id="tab-career">
-    <div class="card" style="margin-bottom: 16px;">
-      <div class="card-hdr" style="display: flex; justify-content: space-between; align-items: center;">
-        <span>Athlete Levels</span>
-        <span style="font-size: 11px; font-weight: 600; color: var(--txt2);">Based on ${FTP}W FTP</span>
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: .06em;">ATHLETE LEVELS</div>
+        <div style="font-size: 12px; color: var(--txt2);">Based on 337W FTP</div>
       </div>
-      <div style="margin-top: 20px;">
-        <div style="margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 14px; font-weight: 600;">Endurance</span>
-            <span style="font-size: 18px; font-weight: 700;" id="level-endurance">--</span>
-          </div>
-          <div style="background: var(--bg3); height: 24px; border-radius: 4px; overflow: hidden; position: relative;">
-            <div id="bar-endurance" style="background: var(--red); height: 100%; width: 0%; transition: width .6s;"></div>
-            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(10, 1fr); padding: 0 2px;">
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div></div>
-            </div>
-          </div>
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 14px; font-weight: 600;">Tempo</span>
-            <span style="font-size: 18px; font-weight: 700;" id="level-tempo">--</span>
-          </div>
-          <div style="background: var(--bg3); height: 24px; border-radius: 4px; overflow: hidden; position: relative;">
-            <div id="bar-tempo" style="background: var(--red); height: 100%; width: 0%; transition: width .6s;"></div>
-            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(10, 1fr); padding: 0 2px;">
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div></div>
-            </div>
-          </div>
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 14px; font-weight: 600;">Sweet Spot</span>
-            <span style="font-size: 18px; font-weight: 700;" id="level-ss">--</span>
-          </div>
-          <div style="background: var(--bg3); height: 24px; border-radius: 4px; overflow: hidden; position: relative;">
-            <div id="bar-ss" style="background: var(--red); height: 100%; width: 0%; transition: width .6s;"></div>
-            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(10, 1fr); padding: 0 2px;">
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div></div>
-            </div>
-          </div>
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 14px; font-weight: 600;">Threshold</span>
-            <span style="font-size: 18px; font-weight: 700;" id="level-threshold">--</span>
-          </div>
-          <div style="background: var(--bg3); height: 24px; border-radius: 4px; overflow: hidden; position: relative;">
-            <div id="bar-threshold" style="background: var(--red); height: 100%; width: 0%; transition: width .6s;"></div>
-            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(10, 1fr); padding: 0 2px;">
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div></div>
-            </div>
-          </div>
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 14px; font-weight: 600;">VO2 Max</span>
-            <span style="font-size: 18px; font-weight: 700;" id="level-vo2">--</span>
-          </div>
-          <div style="background: var(--bg3); height: 24px; border-radius: 4px; overflow: hidden; position: relative;">
-            <div id="bar-vo2" style="background: var(--red); height: 100%; width: 0%; transition: width .6s;"></div>
-            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(10, 1fr); padding: 0 2px;">
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div></div>
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 14px; font-weight: 600;">Anaerobic</span>
-            <span style="font-size: 18px; font-weight: 700;" id="level-anaerobic">--</span>
-          </div>
-          <div style="background: var(--bg3); height: 24px; border-radius: 4px; overflow: hidden; position: relative;">
-            <div id="bar-anaerobic" style="background: var(--red); height: 100%; width: 0%; transition: width .6s;"></div>
-            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(10, 1fr); padding: 0 2px;">
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div style="border-right: 1px solid var(--bg);"></div>
-              <div></div>
-            </div>
-          </div>
-        </div>
+      
+      <div id="athlete-levels-container">
+        <!-- Bars get populated by JavaScript -->
+        <div class="loading"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>Loading power data...</div>
       </div>
     </div>
   </div>
@@ -537,7 +409,7 @@ body {
         <div style="font-size: 14px; line-height: 1.6;" id="detail-desc">--</div>
       </div>
       <div style="background: var(--bg3); padding: 14px; border-radius: 6px; margin-top: 16px;">
-        <div style="font-size: 11px; font-weight: 700; color: var(--txt3); text-transform: uppercase; margin-bottom: 8px;">Power Zones (FTP ${FTP}W)</div>
+        <div style="font-size: 11px; font-weight: 700; color: var(--txt3); text-transform: uppercase; margin-bottom: 8px;">Power Zones (FTP 337W)</div>
         <div style="font-size: 12px; line-height: 1.8; color: var(--txt2);">
           Z2 Endurance: 189-209W<br>
           Tempo: 263-280W<br>
@@ -836,54 +708,77 @@ async function loadWellness() {
 }
 
 async function loadPowerCurve() {
-  const data = await api('GET', '/power-curve');
-  if (!data || !data.data) return;
+  // Try to fetch power curve from intervals.icu
+  let peaks = { '60m': 0, '20m': 0, '5m': 0, '1m': 0 };
   
-  const curve = data.data;
-  const weight = 98; // kg
+  try {
+    const data = await api('GET', '/power-curve');
+    if (data && data.data) {
+      peaks = {
+        '60m': data.data[3599] || 0,
+        '20m': data.data[1199] || 0,
+        '5m': data.data[299] || 0,
+        '1m': data.data[59] || 0
+      };
+    }
+  } catch (e) {
+    console.warn('Power curve API failed, calculating from activities', e);
+  }
   
-  // Get peak powers at specific durations
-  const peaks = {
-    '60m': curve[3599] || 0,   // 60 minutes - Endurance
-    '20m': curve[1199] || 0,   // 20 minutes - Tempo/Threshold  
-    '5m': curve[299] || 0,     // 5 minutes - VO2 Max
-    '1m': curve[59] || 0,      // 1 minute - Anaerobic
-  };
+  // If power curve API didn't work, estimate from FTP
+  if (peaks['20m'] === 0) {
+    peaks['60m'] = FTP * 0.85;  // ~85% FTP for 60min
+    peaks['20m'] = FTP / 0.95;  // FTP is ~95% of 20min
+    peaks['5m'] = FTP * 1.15;   // ~115% FTP for 5min
+    peaks['1m'] = FTP * 1.4;    // ~140% FTP for 1min
+  }
   
-  // Calculate athlete levels (0-10 scale) based on W/kg
-  // TrainerRoad uses W/kg benchmarks for scoring
+  const weight = 98;
   const wkg60m = peaks['60m'] / weight;
   const wkg20m = peaks['20m'] / weight;
   const wkg5m = peaks['5m'] / weight;
   const wkg1m = peaks['1m'] / weight;
   
-  // Scoring formula: roughly (W/kg - baseline) * multiplier, capped at 10
-  // Baselines and multipliers tuned for typical cyclist ranges
-  const enduranceLevel = Math.min(10, Math.max(0, (wkg60m - 2.0) * 3.5));
-  const tempoLevel = Math.min(10, Math.max(0, (wkg20m * 0.9 - 2.2) * 3.2)); // 90% of 20min for tempo
-  const ssLevel = Math.min(10, Math.max(0, (wkg20m * 0.95 - 2.5) * 3.0)); // 95% of 20min for SS
-  const thresholdLevel = Math.min(10, Math.max(0, (wkg20m - 2.8) * 2.8));
-  const vo2Level = Math.min(10, Math.max(0, (wkg5m - 3.5) * 2.5));
-  const anaerobicLevel = Math.min(10, Math.max(0, (wkg1m - 5.0) * 2.0));
+  // TrainerRoad-style athlete levels (0-10 scale)
+  const levels = {
+    endurance: Math.min(10, Math.max(0, (wkg60m - 2.0) * 3.5)),
+    tempo: Math.min(10, Math.max(0, (wkg20m * 0.9 - 2.2) * 3.2)),
+    sweetspot: Math.min(10, Math.max(0, (wkg20m * 0.95 - 2.5) * 3.0)),
+    threshold: Math.min(10, Math.max(0, (wkg20m - 2.8) * 2.8)),
+    vo2: Math.min(10, Math.max(0, (wkg5m - 3.5) * 2.5)),
+    anaerobic: Math.min(10, Math.max(0, (wkg1m - 5.0) * 2.0))
+  };
   
-  // Display levels
-  document.getElementById('level-endurance').textContent = enduranceLevel.toFixed(1);
-  document.getElementById('bar-endurance').style.width = (enduranceLevel * 10) + '%';
+  const zones = [
+    { name: 'Endurance', score: levels.endurance },
+    { name: 'Tempo', score: levels.tempo },
+    { name: 'Sweet Spot', score: levels.sweetspot },
+    { name: 'Threshold', score: levels.threshold },
+    { name: 'VO2 Max', score: levels.vo2 },
+    { name: 'Anaerobic', score: levels.anaerobic }
+  ];
   
-  document.getElementById('level-tempo').textContent = tempoLevel.toFixed(1);
-  document.getElementById('bar-tempo').style.width = (tempoLevel * 10) + '%';
+  const container = document.getElementById('athlete-levels-container');
   
-  document.getElementById('level-ss').textContent = ssLevel.toFixed(1);
-  document.getElementById('bar-ss').style.width = (ssLevel * 10) + '%';
-  
-  document.getElementById('level-threshold').textContent = thresholdLevel.toFixed(1);
-  document.getElementById('bar-threshold').style.width = (thresholdLevel * 10) + '%';
-  
-  document.getElementById('level-vo2').textContent = vo2Level.toFixed(1);
-  document.getElementById('bar-vo2').style.width = (vo2Level * 10) + '%';
-  
-  document.getElementById('level-anaerobic').textContent = anaerobicLevel.toFixed(1);
-  document.getElementById('bar-anaerobic').style.width = (anaerobicLevel * 10) + '%';
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: 140px 60px 1fr; gap: 16px; align-items: center; margin-bottom: 20px;">
+      ${zones.map(z => `
+        <div style="font-size: 14px; font-weight: 600;">${z.name}</div>
+        <div style="font-size: 28px; font-weight: 800; text-align: right;">${z.score.toFixed(1)}</div>
+        <div style="position: relative; height: 28px; background: var(--bg3); border-radius: 4px; overflow: hidden;">
+          <div style="background: var(--red); height: 100%; width: ${z.score * 10}%; transition: width .8s ease-out;"></div>
+        </div>
+      `).join('')}
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 140px 60px 1fr; gap: 16px; margin-top: 8px;">
+      <div></div>
+      <div></div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--txt3); padding: 0 2px;">
+        <span>0</span><span>2</span><span>4</span><span>6</span><span>8</span><span>10</span>
+      </div>
+    </div>
+  `;
 }
 
 async function loadActivities() {
