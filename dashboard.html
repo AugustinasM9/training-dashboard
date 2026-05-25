@@ -339,15 +339,28 @@ body {
   <!-- COACH TAB -->
   <div class="tab" id="tab-coach">
     <div class="card" style="height: calc(100vh - 200px); display: flex; flex-direction: column;">
-      <div class="card-hdr">AI Coach</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div class="card-hdr" style="margin: 0;">AI Coach</div>
+        <button class="btn" onclick="clearChat()" style="font-size: 10px; padding: 6px 10px;">Clear Chat</button>
+      </div>
       <div id="chat-msgs" style="flex: 1; overflow-y: auto; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 12px 0;">
-        <div style="text-align: center; color: var(--txt2); font-size: 13px; padding: 40px 20px;">
-          Ask me about your training, recovery, or race prep. I can see your CTL, recent rides, and fitness data.
+        <div id="chat-welcome" style="padding: 20px;">
+          <div style="font-size: 14px; color: var(--txt); margin-bottom: 16px; line-height: 1.6;">
+            I'm your training coach. I have access to all your data: CTL/ATL/TSB, every recent ride with power data, athlete levels, FTP zones, and your race calendar. Ask me anything.
+          </div>
+          <div style="font-size: 11px; color: var(--txt2); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px;">Try asking:</div>
+          <div style="display: grid; gap: 8px;">
+            <div onclick="askSuggested('How is my current training load? Am I in a good place?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">💪 How is my current training load?</div>
+            <div onclick="askSuggested('Analyze my last 7 rides. What patterns do you see?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">📊 Analyze my recent rides</div>
+            <div onclick="askSuggested('Plan my training week leading up to VeloPeak 500 on July 6')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">🎯 Plan my training week</div>
+            <div onclick="askSuggested('What are my biggest weaknesses based on my athlete levels?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">⚡ What are my weaknesses?</div>
+            <div onclick="askSuggested('Should I do a recovery day tomorrow or push harder?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">😴 Recovery or push harder?</div>
+          </div>
         </div>
       </div>
       <div style="display: flex; gap: 8px;">
-        <input id="chat-input" type="text" placeholder="Ask about training..." style="flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; color: var(--txt); font-family: inherit; font-size: 14px;">
-        <button onclick="sendChat()" class="btn" style="padding: 12px 20px;">Send</button>
+        <input id="chat-input" type="text" placeholder="Ask about training, recovery, race prep, anything..." style="flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; color: var(--txt); font-family: inherit; font-size: 14px;">
+        <button onclick="sendChat()" class="btn red" style="padding: 12px 20px;">Send</button>
       </div>
     </div>
   </div>
@@ -470,6 +483,15 @@ body {
 <script>
 const API = '';
 const FTP = 337;
+
+// Global cache of all loaded data - AI Coach uses this
+const DATA = {
+  wellness: null,
+  activities: null,
+  powerCurve: null,
+  athleteLevels: null,
+  lastUpdated: null
+};
 
 // ════════════════════════════════════════════════════════════════════════
 //  SESSION LIBRARY (37 sessions)
@@ -704,6 +726,7 @@ async function loadWellness() {
     }
   });
   
+  DATA.wellness = data;
   return data;
 }
 
@@ -757,6 +780,9 @@ async function loadPowerCurve() {
     { name: 'VO2 Max', score: levels.vo2 },
     { name: 'Anaerobic', score: levels.anaerobic }
   ];
+  
+  DATA.powerCurve = peaks;
+  DATA.athleteLevels = levels;
   
   const container = document.getElementById('athlete-levels-container');
   
@@ -844,6 +870,7 @@ async function loadActivities() {
     `;
   }).join('');
   
+  DATA.activities = data;
   return data;
 }
 
@@ -1118,18 +1145,164 @@ async function pushWeek() {
 
 let chatHistory = [];
 
+function renderMarkdown(text) {
+  // Simple markdown: **bold**, *italic*, `code`, lists, line breaks
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code style="background: var(--bg4); padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 12px;">$1</code>')
+    .replace(/^### (.*$)/gm, '<h4 style="margin: 12px 0 6px 0; font-size: 14px; font-weight: 700;">$1</h4>')
+    .replace(/^## (.*$)/gm, '<h3 style="margin: 14px 0 8px 0; font-size: 15px; font-weight: 700;">$1</h3>')
+    .replace(/^# (.*$)/gm, '<h2 style="margin: 16px 0 10px 0; font-size: 16px; font-weight: 700;">$1</h2>')
+    .replace(/^- (.*$)/gm, '<div style="margin: 4px 0 4px 16px; position: relative;"><span style="position: absolute; left: -12px;">•</span>$1</div>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
 function addChatMsg(role, text) {
+  // Hide welcome screen on first message
+  const welcome = document.getElementById('chat-welcome');
+  if (welcome) welcome.remove();
+  
   const msgs = document.getElementById('chat-msgs');
   const div = document.createElement('div');
   div.style.cssText = `margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start;`;
   
   const isUser = role === 'user';
+  const rendered = isUser ? text : renderMarkdown(text);
+  
   div.innerHTML = `
-    <div style="width: 32px; height: 32px; border-radius: 50%; background: ${isUser ? 'var(--red)' : 'var(--blue)'}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;">${isUser ? 'YOU' : 'AI'}</div>
-    <div style="flex: 1; background: var(--bg3); padding: 12px 14px; border-radius: 8px; font-size: 13px; line-height: 1.6;">${text}</div>
+    <div style="width: 32px; height: 32px; border-radius: 50%; background: ${isUser ? 'var(--red)' : 'var(--blue)'}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; color: #fff;">${isUser ? 'YOU' : 'AI'}</div>
+    <div style="flex: 1; background: ${isUser ? 'var(--bg3)' : 'var(--bg2)'}; padding: 12px 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; border: 1px solid var(--border);">${rendered}</div>
   `;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+}
+
+function buildContext() {
+  // Build comprehensive context from all loaded data
+  let context = `You are Augustinas's personal cycling coach. You're direct, knowledgeable, and evidence-based. Use his actual data to give specific advice.
+
+ATHLETE PROFILE:
+- Name: Augustinas
+- FTP: 337W
+- Weight: 98kg
+- Age: 24
+- W/kg: 3.4 at FTP
+- Background: Physiotherapist at Widen Arena, evidence-based strength rehab specialist
+- Discipline: Gravel cycling (competitive)
+
+POWER ZONES (FTP-based):
+- Z1 Active Recovery: <169W
+- Z2 Endurance: 189-219W
+- Z3 Tempo: 256-293W
+- Sweet Spot: 297-317W (95-105% FTP)
+- Z4 Threshold: 320-354W
+- Z5 VO2 Max: 371-388W
+- Z6 Anaerobic: 421W+
+
+UPCOMING RACES:
+- VeloPeak 500 — July 6, 2026 (gravel ultra)
+- Megre Gravel — August 1, 2026
+
+CURRENT TRAINING METRICS:`;
+
+  // Add wellness data (CTL/ATL/TSB)
+  if (DATA.wellness && DATA.wellness.length > 0) {
+    const today = DATA.wellness[DATA.wellness.length - 1] || {};
+    const yesterday = DATA.wellness[DATA.wellness.length - 2] || {};
+    const weekAgo = DATA.wellness[DATA.wellness.length - 8] || {};
+    
+    context += `
+- CTL (Fitness, 42-day avg): ${Math.round(today.ctl || 0)} (${Math.round(weekAgo.ctl || 0)} a week ago, trend: ${(today.ctl || 0) > (weekAgo.ctl || 0) ? 'building' : 'declining'})
+- ATL (Fatigue, 7-day avg): ${Math.round(today.atl || 0)}
+- TSB (Form): ${Math.round((today.ctl || 0) - (today.atl || 0))} ${(today.ctl - today.atl) > 5 ? '(fresh)' : (today.ctl - today.atl) < -20 ? '(very fatigued)' : (today.ctl - today.atl) < -10 ? '(fatigued)' : '(neutral)'}
+- Yesterday's TSB: ${Math.round((yesterday.ctl || 0) - (yesterday.atl || 0))}`;
+  }
+  
+  // Add recent activities (last 14 days)
+  if (DATA.activities && DATA.activities.length > 0) {
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    const recent = DATA.activities
+      .filter(a => new Date(a.start_date_local) >= fourteenDaysAgo)
+      .sort((a, b) => new Date(b.start_date_local) - new Date(a.start_date_local))
+      .slice(0, 14);
+    
+    const weekTss = DATA.activities
+      .filter(a => {
+        const d = new Date(a.start_date_local);
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return d >= weekAgo;
+      })
+      .reduce((s, a) => s + (a.icu_training_load || 0), 0);
+    
+    context += `
+
+THIS WEEK:
+- Total TSS: ${Math.round(weekTss)}
+- Rides: ${recent.filter(a => {
+      const d = new Date(a.start_date_local);
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return d >= weekAgo;
+    }).length}
+
+RECENT RIDES (last 14 days, newest first):`;
+    
+    recent.forEach(a => {
+      const dur = Math.round((a.moving_time || 0) / 60);
+      const tss = Math.round(a.icu_training_load || 0);
+      const np = Math.round(a.icu_normalized_power || 0);
+      const ap = Math.round(a.average_watts || a.icu_average_watts || 0);
+      const intensity = np ? (np / FTP).toFixed(2) : '--';
+      context += `
+- ${a.start_date_local?.slice(0, 10)}: "${a.name}" — ${dur}min, ${tss} TSS, AP ${ap}W, NP ${np}W (IF ${intensity})`;
+    });
+  }
+  
+  // Add athlete levels
+  if (DATA.athleteLevels) {
+    const L = DATA.athleteLevels;
+    context += `
+
+ATHLETE LEVELS (0-10 scale):
+- Endurance: ${L.endurance.toFixed(1)}
+- Tempo: ${L.tempo.toFixed(1)}
+- Sweet Spot: ${L.sweetspot.toFixed(1)}
+- Threshold: ${L.threshold.toFixed(1)}
+- VO2 Max: ${L.vo2.toFixed(1)}
+- Anaerobic: ${L.anaerobic.toFixed(1)}`;
+  }
+  
+  // Add power curve peaks
+  if (DATA.powerCurve) {
+    const P = DATA.powerCurve;
+    context += `
+
+PEAK POWERS (42-day window):
+- 1 min: ${Math.round(P['1m'])}W (${(P['1m']/98).toFixed(2)} W/kg)
+- 5 min: ${Math.round(P['5m'])}W (${(P['5m']/98).toFixed(2)} W/kg)
+- 20 min: ${Math.round(P['20m'])}W (${(P['20m']/98).toFixed(2)} W/kg)
+- 60 min: ${Math.round(P['60m'])}W (${(P['60m']/98).toFixed(2)} W/kg)`;
+  }
+  
+  context += `
+
+COACHING STYLE:
+- Be direct and specific with numbers and watts
+- Reference his actual data when giving advice
+- Use power zones, TSS targets, specific watt ranges
+- Don't be vague — give concrete recommendations
+- Format with markdown (use **bold** for key points, bullet lists, headers)
+- Push back if he's asking for something stupid (overtraining, etc.)
+- He's a physiotherapist so you can use technical language about training adaptations`;
+  
+  return context;
 }
 
 async function sendChat() {
@@ -1144,19 +1317,16 @@ async function sendChat() {
   const msgs = document.getElementById('chat-msgs');
   const typing = document.createElement('div');
   typing.id = 'typing';
-  typing.style.cssText = 'text-align: center; padding: 12px; color: var(--txt2); font-size: 12px;';
-  typing.innerHTML = '<span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> Thinking...';
+  typing.style.cssText = 'padding: 12px 16px; color: var(--txt2); font-size: 12px; display: flex; align-items: center; gap: 10px;';
+  typing.innerHTML = `
+    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: #fff;">AI</div>
+    <div><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> Thinking...</div>
+  `;
   msgs.appendChild(typing);
   msgs.scrollTop = msgs.scrollHeight;
   
   try {
-    const context = `You are a cycling coach for Augustinas (FTP ${FTP}W). Current stats:
-- CTL: ${document.getElementById('m-ctl').textContent}
-- ATL: ${document.getElementById('m-atl').textContent}
-- TSB: ${document.getElementById('m-tsb').textContent}
-- Week TSS: ${document.getElementById('m-wktss').textContent}
-
-Be direct and specific with training advice. Reference power zones when relevant.`;
+    const context = buildContext();
     
     const res = await fetch('/claude', {
       method: 'POST',
@@ -1166,7 +1336,7 @@ Be direct and specific with training advice. Reference power zones when relevant
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 2048,
         system: context,
         messages: chatHistory
       })
@@ -1175,20 +1345,41 @@ Be direct and specific with training advice. Reference power zones when relevant
     typing.remove();
     
     if (!res.ok) {
-      addChatMsg('coach', 'Error: ' + res.status);
+      const errText = await res.text();
+      console.error('Chat error', res.status, errText);
+      addChatMsg('coach', `**Error ${res.status}**: ${errText.slice(0, 200) || 'Server error'}\n\nMake sure ANTHROPIC_API_KEY is set on your Render server.`);
       return;
     }
     
     const data = await res.json();
-    const reply = data.content?.[0]?.text || 'No response.';
+    const reply = data.content?.[0]?.text || data.error?.message || 'No response received.';
     addChatMsg('coach', reply);
     chatHistory.push({ role: 'assistant', content: reply });
     
+    // Keep last 20 messages
     if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
   } catch (e) {
     document.getElementById('typing')?.remove();
-    addChatMsg('coach', 'Error: ' + e.message);
+    console.error('Chat exception', e);
+    addChatMsg('coach', `**Connection error**: ${e.message}`);
   }
+}
+
+function askSuggested(question) {
+  const input = document.getElementById('chat-input');
+  input.value = question;
+  sendChat();
+}
+
+function clearChat() {
+  chatHistory = [];
+  document.getElementById('chat-msgs').innerHTML = `
+    <div id="chat-welcome" style="padding: 20px;">
+      <div style="font-size: 14px; color: var(--txt); margin-bottom: 16px; line-height: 1.6;">
+        Chat cleared. Ask me anything about your training.
+      </div>
+    </div>
+  `;
 }
 
 document.getElementById('chat-input')?.addEventListener('keydown', e => {
