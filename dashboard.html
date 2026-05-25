@@ -260,6 +260,10 @@ body {
 
   <!-- DASHBOARD TAB -->
   <div class="tab active" id="tab-dash">
+    <div id="debug-panel" style="background: #1a1a1f; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--txt2); max-height: 150px; overflow-y: auto;">
+      <div style="color: var(--txt); margin-bottom: 6px; font-weight: 600;">DEBUG LOG <span style="float: right; cursor: pointer; color: var(--txt3);" onclick="document.getElementById('debug-panel').style.display='none'">[hide]</span></div>
+      <div id="debug-log">Initializing...</div>
+    </div>
     <div class="metrics-grid">
       <div class="card">
         <div class="card-hdr">Fitness CTL</div>
@@ -639,36 +643,34 @@ async function api(method, path) {
     showLogin();
     return null;
   }
-  console.log(`[API] ${method} ${path}`);
+  debugLog(`→ ${method} ${path}`);
   try {
     const res = await fetch('/api' + path, {
       method,
       headers: { 'Authorization': 'Bearer ' + token }
     });
     if (res.status === 401) {
-      console.warn('[API] 401 - clearing token');
+      debugLog(`✗ 401 unauthorized - logging out`, 'var(--red)');
       localStorage.removeItem('dash_token');
       showLogin();
       return null;
     }
     const text = await res.text();
     if (!res.ok) {
-      console.error(`[API] ${res.status} error on ${path}:`, text.slice(0, 300));
-      setStatus('err', `API ${res.status}: ${path}`);
+      debugLog(`✗ ${res.status} on ${path}: ${text.slice(0, 100)}`, 'var(--red)');
       return null;
     }
     try {
       const data = JSON.parse(text);
-      console.log(`[API] ${path} returned`, Array.isArray(data) ? `array of ${data.length}` : typeof data);
+      const summary = Array.isArray(data) ? `array[${data.length}]` : typeof data;
+      debugLog(`✓ ${path} → ${summary}`, 'var(--green)');
       return data;
     } catch (e) {
-      console.error(`[API] JSON parse failed for ${path}:`, text.slice(0, 300));
-      setStatus('err', `Bad JSON from ${path}`);
+      debugLog(`✗ JSON parse failed on ${path}: ${text.slice(0, 100)}`, 'var(--red)');
       return null;
     }
   } catch (e) {
-    console.error(`[API] Fetch error on ${path}:`, e);
-    setStatus('err', `Fetch error: ${e.message}`);
+    debugLog(`✗ fetch error: ${e.message}`, 'var(--red)');
     return null;
   }
 }
@@ -697,6 +699,15 @@ function setStatus(state, text) {
   const s = document.getElementById('status');
   s.className = 'status ' + (state || '');
   document.getElementById('status-txt').textContent = text;
+}
+
+function debugLog(msg, color) {
+  const log = document.getElementById('debug-log');
+  if (!log) return;
+  const time = new Date().toLocaleTimeString();
+  const c = color || 'var(--txt2)';
+  log.innerHTML = `<div style="color: ${c};">[${time}] ${msg}</div>` + log.innerHTML;
+  console.log(`[${time}] ${msg}`);
 }
 
 function daysAgo(n) {
@@ -891,13 +902,35 @@ async function loadActivities() {
 }
 
 async function loadAll() {
-  setStatus('', 'Connecting...');
-  try {
-    await Promise.all([loadWellness(), loadActivities(), loadPowerCurve()]);
+  setStatus('', 'Loading...');
+  
+  const results = await Promise.allSettled([
+    loadWellness(),
+    loadActivities(),
+    loadPowerCurve()
+  ]);
+  
+  const names = ['Wellness', 'Activities', 'PowerCurve'];
+  const failed = [];
+  
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      failed.push(`${names[i]} (exception: ${r.reason?.message || 'unknown'})`);
+      console.error(`[loadAll] ${names[i]} threw:`, r.reason);
+    } else if (r.value === null || r.value === undefined) {
+      failed.push(`${names[i]} (no data)`);
+      console.warn(`[loadAll] ${names[i]} returned null/undefined`);
+    } else {
+      console.log(`[loadAll] ${names[i]} OK`);
+    }
+  });
+  
+  if (failed.length === 0) {
     setStatus('ok', 'Connected · ' + new Date().toLocaleTimeString());
-  } catch (e) {
-    setStatus('err', 'Error: ' + e.message);
-    console.error(e);
+  } else if (failed.length === 3) {
+    setStatus('err', 'All APIs failed - check console');
+  } else {
+    setStatus('err', `Failed: ${failed.join(', ')}`);
   }
 }
 
