@@ -342,7 +342,16 @@ body {
 
   <!-- COACH TAB -->
   <div class="tab" id="tab-coach">
-    <div class="card" style="height: calc(100vh - 200px); display: flex; flex-direction: column;">
+    <div class="card" style="margin-bottom: 12px; padding: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--txt);">⚡ Weekly Plan Generator</div>
+          <div style="font-size: 12px; color: var(--txt2); margin-top: 4px;">AI analyzes your weakest zones and picks 2 key workouts for flat gravel racing. Other days = Z2.</div>
+        </div>
+        <button onclick="generateWeekPlan()" class="btn red" style="padding: 12px 20px; font-size: 12px;">Generate Week Plan</button>
+      </div>
+    </div>
+    <div class="card" style="height: calc(100vh - 300px); display: flex; flex-direction: column;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <div class="card-hdr" style="margin: 0;">AI Coach</div>
         <button class="btn" onclick="clearChat()" style="font-size: 10px; padding: 6px 10px;">Clear Chat</button>
@@ -350,14 +359,13 @@ body {
       <div id="chat-msgs" style="flex: 1; overflow-y: auto; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 12px 0;">
         <div id="chat-welcome" style="padding: 20px;">
           <div style="font-size: 14px; color: var(--txt); margin-bottom: 16px; line-height: 1.6;">
-            I'm your training coach. I have access to all your data: CTL/ATL/TSB, every recent ride with power data, athlete levels, FTP zones, and your race calendar. Ask me anything.
+            I'm your training coach. I have access to all your data: CTL/ATL/TSB, every recent ride with power data, athlete levels, FTP zones, race calendar, and your full session library. Ask me anything or click <strong>Generate Week Plan</strong> above for a tailored 2-workout week.
           </div>
           <div style="font-size: 11px; color: var(--txt2); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px;">Try asking:</div>
           <div style="display: grid; gap: 8px;">
             <div onclick="askSuggested('How is my current training load? Am I in a good place?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">💪 How is my current training load?</div>
             <div onclick="askSuggested('Analyze my last 7 rides. What patterns do you see?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">📊 Analyze my recent rides</div>
-            <div onclick="askSuggested('Plan my training week leading up to VeloPeak 500 on July 6')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">🎯 Plan my training week</div>
-            <div onclick="askSuggested('What are my biggest weaknesses based on my athlete levels?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">⚡ What are my weaknesses?</div>
+            <div onclick="askSuggested('What are my biggest weaknesses for a flat gravel race?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">⚡ What are my weaknesses for flat gravel?</div>
             <div onclick="askSuggested('Should I do a recovery day tomorrow or push harder?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">😴 Recovery or push harder?</div>
           </div>
         </div>
@@ -1351,7 +1359,22 @@ PEAK POWERS (42-day window):
 - 60 min: ${Math.round(P['60m'])}W (${(P['60m']/98).toFixed(2)} W/kg)`;
   }
   
+  // Add session library
   context += `
+
+AVAILABLE SESSION LIBRARY (use these exact names when recommending workouts):`;
+  Object.entries(SESS).forEach(([key, s]) => {
+    context += `
+- [${s.cat}] "${s.name}" — ${s.dur}min, ${s.tss} TSS — ${s.desc}`;
+  });
+  
+  context += `
+
+PRIMARY RACE GOAL: Flat gravel racing
+- VeloPeak 500 — July 6, 2026 (gravel ultra, flat profile)
+- Demands: sustained threshold/tempo power for hours, ability to surge for attacks/positioning
+- KEY abilities for flat gravel: Threshold > Sweet Spot > Endurance > VO2 Max > Anaerobic
+- LESS critical: Pure climbing power, sprint anaerobic capacity
 
 COACHING STYLE:
 - Be direct and specific with numbers and watts
@@ -1360,7 +1383,8 @@ COACHING STYLE:
 - Don't be vague — give concrete recommendations
 - Format with markdown (use **bold** for key points, bullet lists, headers)
 - Push back if he's asking for something stupid (overtraining, etc.)
-- He's a physiotherapist so you can use technical language about training adaptations`;
+- He's a physiotherapist so you can use technical language about training adaptations
+- When recommending workouts, use EXACT names from the session library above`;
   
   return context;
 }
@@ -1429,6 +1453,111 @@ function askSuggested(question) {
   const input = document.getElementById('chat-input');
   input.value = question;
   sendChat();
+}
+
+async function generateWeekPlan() {
+  // Check we have data
+  if (!DATA.wellness || !DATA.activities) {
+    alert('Wait for training data to load first');
+    return;
+  }
+  
+  const displayMsg = '🎯 Generate this week\'s training plan — 2 key sessions targeting my weakest zones for flat gravel racing';
+  
+  const fullPrompt = `Analyze my training data and design THIS WEEK's plan for flat gravel racing.
+
+REQUIREMENTS:
+1. Identify my **2 weakest abilities** that matter most for flat gravel (Threshold > Sweet Spot > Endurance > VO2 > Anaerobic)
+2. Recommend **exactly 2 hard sessions** from my session library that target those weaknesses
+3. The other days should be **Z2 endurance rides** or rest, based on my current TSB/recovery state
+4. Account for current CTL/ATL/TSB — don't prescribe more load than I can absorb
+
+OUTPUT FORMAT (use this structure exactly):
+
+## 🎯 Weak Zone Analysis
+[2-3 sentences on which zones are weakest and why they matter for flat gravel]
+
+## 🔥 This Week's 2 Key Sessions
+
+### Session 1: [Day, e.g. Tuesday] — [EXACT session name from library]
+- **What**: brief description
+- **Why**: specific reason based on my data (e.g., "your Threshold level is 3.3, lowest of all")
+- **Target watts**: specific range
+
+### Session 2: [Day, e.g. Friday/Saturday] — [EXACT session name from library]
+- **What**: brief description
+- **Why**: specific reason based on my data
+- **Target watts**: specific range
+
+## 📅 Full Week Layout
+- **MON**: [session or rest]
+- **TUE**: [session]
+- **WED**: [Z2 ride duration in min]
+- **THU**: [rest or recovery]
+- **FRI**: [session]
+- **SAT**: [Z2 long ride duration]
+- **SUN**: [Z2 or rest]
+
+## 📊 Week Totals
+- Estimated TSS: [number]
+- Hard sessions: 2
+- Z2 hours: [number]
+
+Be DIRECT. Use my real numbers. Reference the session library by exact name.`;
+
+  // Hide welcome screen
+  const welcome = document.getElementById('chat-welcome');
+  if (welcome) welcome.remove();
+  
+  // Show user-friendly message in UI
+  addChatMsg('user', displayMsg);
+  // But send the detailed prompt to Claude
+  chatHistory.push({ role: 'user', content: fullPrompt });
+  
+  // Show typing indicator
+  const msgs = document.getElementById('chat-msgs');
+  const typing = document.createElement('div');
+  typing.id = 'typing';
+  typing.style.cssText = 'padding: 12px 16px; color: var(--txt2); font-size: 12px; display: flex; align-items: center; gap: 10px;';
+  typing.innerHTML = `
+    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: #fff;">AI</div>
+    <div><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> Analyzing your data and designing your week...</div>
+  `;
+  msgs.appendChild(typing);
+  msgs.scrollTop = msgs.scrollHeight;
+  
+  try {
+    const context = buildContext();
+    const res = await fetch('/claude', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('dash_token')
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        system: context,
+        messages: chatHistory
+      })
+    });
+    
+    typing.remove();
+    
+    if (!res.ok) {
+      const errText = await res.text();
+      addChatMsg('coach', `**Error ${res.status}**: ${errText.slice(0, 200)}\n\nMake sure ANTHROPIC_API_KEY is set on your Render server.`);
+      return;
+    }
+    
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'No response received.';
+    addChatMsg('coach', reply);
+    chatHistory.push({ role: 'assistant', content: reply });
+  } catch (e) {
+    document.getElementById('typing')?.remove();
+    addChatMsg('coach', `**Error**: ${e.message}`);
+  }
 }
 
 function clearChat() {
