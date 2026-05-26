@@ -1419,7 +1419,7 @@ async function sendChat() {
         'Authorization': 'Bearer ' + localStorage.getItem('dash_token')
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 2048,
         system: context,
         messages: chatHistory
@@ -1535,7 +1535,7 @@ Be DIRECT. Use my real numbers. Reference the session library by exact name.`;
         'Authorization': 'Bearer ' + localStorage.getItem('dash_token')
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 3000,
         system: context,
         messages: chatHistory
