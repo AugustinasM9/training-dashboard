@@ -645,18 +645,26 @@ function logout() {
 //  API
 // ════════════════════════════════════════════════════════════════════════
 
-async function api(method, path) {
+async function api(method, path, body = null) {
   const token = localStorage.getItem('dash_token') || '';
   if (!token) {
     showLogin();
     return null;
   }
-  debugLog(`→ ${method} ${path}`);
+  debugLog(`→ ${method} ${path}${body ? ' (with body)' : ''}`);
   try {
-    const res = await fetch('/api' + path, {
+    const options = {
       method,
       headers: { 'Authorization': 'Bearer ' + token }
-    });
+    };
+    
+    // Add body for POST/PUT/PATCH
+    if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+      options.headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify(body);
+    }
+    
+    const res = await fetch('/api' + path, options);
     if (res.status === 401) {
       debugLog(`✗ 401 unauthorized - logging out`, 'var(--red)');
       localStorage.removeItem('dash_token');
@@ -851,6 +859,8 @@ async function loadPowerCurve() {
       </div>
     </div>
   `;
+  
+  return peaks;
 }
 
 async function loadActivities() {
