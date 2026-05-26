@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Training Dashboard Server
-- Proxies intervals.icu API with Cloudflare bypass headers
+- Proxies intervals.icu API
 - Proxies Anthropic Claude API for AI Coach
 - Bearer token authentication
 """
@@ -34,7 +34,8 @@ def check_auth(headers):
     return auth[7:] in TOKENS
 
 def icu_auth():
-    creds = f"{ICU_ID}:{ICU_KEY}"
+    """intervals.icu Basic auth: username='API_KEY', password=<your_key>"""
+    creds = f"API_KEY:{ICU_KEY}"
     return 'Basic ' + base64.b64encode(creds.encode()).decode()
 
 def proxy_icu(path, query, method='GET', body=None):
@@ -49,19 +50,25 @@ def proxy_icu(path, query, method='GET', body=None):
     req.add_header('Accept', 'application/json, text/plain, */*')
     req.add_header('Accept-Language', 'en-US,en;q=0.9')
     req.add_header('Accept-Encoding', 'gzip, deflate')
-    req.add_header('Referer', 'https://intervals.icu/')
-    req.add_header('Origin', 'https://intervals.icu')
     if method == 'POST':
         req.add_header('Content-Type', 'application/json')
     
     try:
         with urllib.request.urlopen(req, timeout=30) as response:
             raw = response.read()
+            # Always handle gzip if present
             if response.headers.get('Content-Encoding') == 'gzip':
                 raw = gzip.decompress(raw)
             return 200, raw.decode('utf-8')
     except urllib.error.HTTPError as e:
-        body = e.read().decode('utf-8', errors='replace')
+        raw = e.read()
+        # Decompress error body too if gzipped
+        if e.headers.get('Content-Encoding') == 'gzip':
+            try:
+                raw = gzip.decompress(raw)
+            except:
+                pass
+        body = raw.decode('utf-8', errors='replace')
         print(f"[ICU ERROR {e.code}] {body[:200]}")
         return e.code, body
     except Exception as e:
@@ -183,6 +190,7 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == '__main__':
     print(f"Training Dashboard starting on port {PORT}")
     print(f"   ICU_ID: {ICU_ID}")
+    print(f"   ICU auth: API_KEY:{ICU_KEY[:6]}...")
     print(f"   ANTHROPIC_KEY: {'set' if ANTHROPIC_KEY else 'NOT SET (chat will not work)'}")
     server = HTTPServer(('0.0.0.0', PORT), Handler)
     try:

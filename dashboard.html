@@ -762,25 +762,36 @@ async function loadPowerCurve() {
   let peaks = { '60m': 0, '20m': 0, '5m': 0, '1m': 0 };
   
   try {
-    const data = await api('GET', '/power-curve');
-    if (data && data.data) {
+    // intervals.icu uses /power-curves (plural) with a curves param
+    const data = await api('GET', '/power-curves?curves=42d');
+    let curve = null;
+    if (data) {
+      // Response format: { "42d": [array] } OR { curves: [{id, data}] }
+      if (data['42d']) curve = data['42d'];
+      else if (data.curves && data.curves[0]) curve = data.curves[0].data;
+      else if (Array.isArray(data)) curve = data;
+      else if (data.data) curve = data.data;
+    }
+    if (curve && Array.isArray(curve)) {
       peaks = {
-        '60m': data.data[3599] || 0,
-        '20m': data.data[1199] || 0,
-        '5m': data.data[299] || 0,
-        '1m': data.data[59] || 0
+        '60m': curve[3599] || 0,
+        '20m': curve[1199] || 0,
+        '5m': curve[299] || 0,
+        '1m': curve[59] || 0
       };
+      debugLog(`Power curve loaded: 20m=${Math.round(peaks['20m'])}W, 5m=${Math.round(peaks['5m'])}W`, 'var(--green)');
     }
   } catch (e) {
-    console.warn('Power curve API failed, calculating from activities', e);
+    console.warn('Power curve API failed', e);
   }
   
   // If power curve API didn't work, estimate from FTP
   if (peaks['20m'] === 0) {
-    peaks['60m'] = FTP * 0.85;  // ~85% FTP for 60min
-    peaks['20m'] = FTP / 0.95;  // FTP is ~95% of 20min
-    peaks['5m'] = FTP * 1.15;   // ~115% FTP for 5min
-    peaks['1m'] = FTP * 1.4;    // ~140% FTP for 1min
+    debugLog(`Power curve missing, using FTP estimates`, 'var(--yellow)');
+    peaks['60m'] = FTP * 0.85;
+    peaks['20m'] = FTP / 0.95;
+    peaks['5m'] = FTP * 1.15;
+    peaks['1m'] = FTP * 1.4;
   }
   
   const weight = 98;
