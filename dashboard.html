@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Training Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --red: #E01A22; --bg: #111114; --bg2: #18181c; --bg3: #1e1e24; --bg4: #252530;
+  --border: #2a2a35; --txt: #e8e8f0; --txt2: #9090a0; --txt3: #505060;
+  --green: #22c55e; --yellow: #f59e0b; --blue: #3b82f6; --orange: #f97316; --purple: #a855f7;
+}
+body {
+  font-family: 'Barlow', sans-serif; background: var(--bg); color: var(--txt);
+  min-height: 100vh; font-size: 14px;
+}
+
+/* Login Modal */
+#login {
+  position: fixed; inset: 0; background: rgba(0,0,0,.95); z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+}
+#login.hide { display: none; }
+#login-box {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+  padding: 40px; width: 360px; text-align: center;
+}
+#login-box h1 {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 32px; font-weight: 800;
+  letter-spacing: .06em; margin-bottom: 6px;
+}
+#login-box h1 span { color: var(--red); }
+#login-box p { font-size: 12px; color: var(--txt2); margin-bottom: 28px; text-transform: uppercase; letter-spacing: .1em; }
+#login-box input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px; font-size: 14px; color: var(--txt);
+  margin-bottom: 16px; font-family: inherit;
+}
+#login-box input:focus { outline: none; border-color: var(--red); }
+#login-box button {
+  width: 100%; background: var(--red); border: none; color: #fff;
+  padding: 13px; border-radius: 6px; font-size: 13px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+  font-family: inherit;
+}
+#login-box button:disabled { opacity: .6; cursor: wait; }
+#login-msg { font-size: 12px; margin-top: 14px; min-height: 18px; color: var(--red); }
+
+/* Nav */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 32px; border-bottom: 1px solid var(--border); background: var(--bg2);
+}
+.logo {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 800;
+  letter-spacing: .06em;
+}
+.logo span { color: var(--red); }
+.navtabs { display: flex; gap: 4px; flex: 1; margin-left: 40px; }
+.navtab {
+  padding: 8px 16px; font-size: 12px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; cursor: pointer; color: var(--txt2);
+  border-bottom: 2px solid transparent;
+}
+.navtab:hover { color: var(--txt); }
+.navtab.active { color: var(--txt); border-bottom-color: var(--red); }
+.nav-right { display: flex; gap: 8px; align-items: center; }
+.status { font-size: 11px; color: var(--txt2); display: flex; align-items: center; gap: 6px; margin-right: 12px; }
+.status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); }
+.status.ok .dot { background: var(--green); }
+.status.err .dot { background: var(--red); }
+.btn {
+  padding: 8px 14px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 5px; color: var(--txt); font-size: 11px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; cursor: pointer; font-family: inherit;
+}
+.btn:hover { background: var(--bg2); border-color: var(--txt3); }
+.btn.red { background: var(--red); border-color: var(--red); color: #fff; }
+.btn.red:hover { background: #c01218; }
+
+/* Content */
+.content { padding: 24px 32px; }
+.tab { display: none; }
+.tab.active { display: block; }
+
+.metrics-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+}
+.card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 20px;
+}
+.card-hdr {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--txt2); margin-bottom: 12px;
+}
+.metric-val { font-size: 32px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+.metric-label { font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: .06em; }
+
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; min-height: 280px; }
+.chart-wrap { position: relative; height: 220px; }
+
+.act-list { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+.act-row {
+  display: grid; grid-template-columns: 100px 1fr 80px 80px 70px 70px;
+  gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border);
+  align-items: center; font-size: 13px;
+}
+.act-row:last-child { border-bottom: none; }
+.act-date { color: var(--txt2); font-size: 12px; }
+.act-name { font-weight: 600; }
+.act-stat { text-align: right; }
+.act-stat .v { font-weight: 700; }
+.act-stat .l { font-size: 10px; color: var(--txt3); text-transform: uppercase; }
+
+/* Workout Builder */
+.week-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 20px;
+}
+.day-card {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; min-height: 160px; cursor: pointer; transition: all .15s;
+}
+.day-card:hover { border-color: var(--txt3); }
+.day-card.active { border-color: var(--red); background: var(--bg2); }
+.day-hdr {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--txt2); margin-bottom: 8px; display: flex; justify-content: space-between;
+  align-items: center;
+}
+.day-toggle {
+  width: 36px; height: 20px; background: var(--bg); border-radius: 10px;
+  position: relative; cursor: pointer;
+}
+.day-toggle.on { background: var(--green); }
+.day-toggle::after {
+  content: ''; width: 16px; height: 16px; background: #fff; border-radius: 50%;
+  position: absolute; top: 2px; left: 2px; transition: all .2s;
+}
+.day-toggle.on::after { left: 18px; }
+.day-sess {
+  font-size: 13px; font-weight: 600; color: var(--txt); margin-top: 8px;
+  padding: 8px 10px; background: var(--bg4); border-radius: 5px; cursor: pointer;
+}
+.day-sess:hover { background: var(--bg); }
+.day-tss { font-size: 11px; color: var(--txt3); margin-top: 4px; }
+
+/* Modals */
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,.8); z-index: 1000;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal.show { display: flex; }
+.modal-box {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+  max-width: 900px; width: 100%; max-height: 90vh; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.modal-hdr {
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.modal-title {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.modal-close {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--bg3);
+  border: none; color: var(--txt2); cursor: pointer; font-size: 18px;
+}
+.modal-close:hover { background: var(--bg4); color: var(--txt); }
+.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+
+.sess-tabs {
+  display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 8px;
+}
+.sess-tab {
+  padding: 8px 14px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;
+  cursor: pointer; transition: all .15s;
+}
+.sess-tab:hover { background: var(--bg4); }
+.sess-tab.active { background: var(--red); border-color: var(--red); color: #fff; }
+
+.sess-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.sess-item {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; cursor: pointer; transition: all .15s;
+}
+.sess-item:hover { border-color: var(--txt3); }
+.sess-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.sess-desc { font-size: 12px; color: var(--txt2); line-height: 1.4; margin-bottom: 8px; }
+.sess-meta {
+  display: flex; gap: 12px; font-size: 11px; color: var(--txt3);
+  padding-top: 8px; border-top: 1px solid var(--border);
+}
+
+.loading { text-align: center; padding: 40px; color: var(--txt2); font-size: 13px; }
+.loading .dots { display: inline-flex; gap: 4px; margin-right: 8px; }
+.loading .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--txt2); animation: pulse 1.4s infinite; }
+.loading .dot:nth-child(2) { animation-delay: .2s; }
+.loading .dot:nth-child(3) { animation-delay: .4s; }
+@keyframes pulse { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+
+.search-bar {
+  margin-bottom: 16px; display: flex; gap: 8px;
+}
+.search-bar input {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--txt);
+  font-family: inherit;
+}
+.search-bar input:focus { outline: none; border-color: var(--red); }
+.search-bar select {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px 14px; font-size: 13px; color: var(--txt); font-family: inherit;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN MODAL -->
+<div id="login">
+  <div id="login-box">
+    <h1>TRAIN<span>ER</span></h1>
+    <p>Training Dashboard</p>
+    <input id="login-pw" type="password" placeholder="Password" autocomplete="current-password">
+    <button id="login-btn">Sign In</button>
+    <div id="login-msg"></div>
+  </div>
+</div>
+
+<!-- TOP NAV -->
+<div class="topbar">
+  <div class="logo">TRAIN<span>ER</span></div>
+  <nav class="navtabs">
+    <div class="navtab active" data-tab="dash">Dashboard</div>
+    <div class="navtab" data-tab="career">Career</div>
+    <div class="navtab" data-tab="builder">Workout Builder</div>
+    <div class="navtab" data-tab="acts">Activities</div>
+    <div class="navtab" data-tab="coach">AI Coach</div>
+  </nav>
+  <div class="nav-right">
+    <div class="status" id="status"><div class="dot"></div><span id="status-txt">Connecting...</span></div>
+    <button class="btn" id="refresh-btn">Refresh</button>
+    <button class="btn red" id="logout-btn">Sign Out</button>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- DASHBOARD TAB -->
+  <div class="tab active" id="tab-dash">
+    <div id="debug-panel" style="background: #1a1a1f; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--txt2); max-height: 150px; overflow-y: auto;">
+      <div style="color: var(--txt); margin-bottom: 6px; font-weight: 600;">DEBUG LOG <span style="float: right; cursor: pointer; color: var(--txt3);" onclick="document.getElementById('debug-panel').style.display='none'">[hide]</span></div>
+      <div id="debug-log">Initializing...</div>
+    </div>
+    <div class="metrics-grid">
+      <div class="card">
+        <div class="card-hdr">Fitness CTL</div>
+        <div class="metric-val" id="m-ctl">--</div>
+        <div class="metric-label">Chronic Training Load</div>
+        <div style="font-size: 11px; color: var(--txt3); margin-top: 6px; line-height: 1.4;">42-day rolling avg of daily TSS. Higher = more fit.</div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">Fatigue ATL</div>
+        <div class="metric-val" id="m-atl">--</div>
+        <div class="metric-label">Acute Training Load</div>
+        <div style="font-size: 11px; color: var(--txt3); margin-top: 6px; line-height: 1.4;">7-day rolling avg of daily TSS. Higher = more fatigued.</div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">Form TSB</div>
+        <div class="metric-val" id="m-tsb">--</div>
+        <div class="metric-label">Training Stress Balance</div>
+        <div style="font-size: 11px; color: var(--txt3); margin-top: 6px; line-height: 1.4;">CTL - ATL. Positive = fresh, negative = fatigued.</div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">Week TSS</div>
+        <div class="metric-val" id="m-wktss">--</div>
+        <div class="metric-label">This Week</div>
+        <div style="font-size: 11px; color: var(--txt3); margin-top: 6px; line-height: 1.4;">Total training stress from last 7 days.</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="card-hdr">CTL / ATL / TSB — 60 Days</div>
+        <div class="chart-wrap"><canvas id="fitChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-hdr">Weekly TSS — 16 Weeks</div>
+        <div class="chart-wrap"><canvas id="wkChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAREER TAB -->
+  <div class="tab" id="tab-career">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: .06em;">ATHLETE LEVELS</div>
+        <div style="font-size: 12px; color: var(--txt2);">Based on 337W FTP</div>
+      </div>
+      
+      <div id="athlete-levels-container">
+        <!-- Bars get populated by JavaScript -->
+        <div class="loading"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>Loading power data...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKOUT BUILDER TAB -->
+  <div class="tab" id="tab-builder">
+    <div class="card" style="margin-bottom: 16px;">
+      <div class="card-hdr">Week Planner</div>
+      <div class="week-grid" id="week-grid"></div>
+      <div style="display: flex; gap: 8px; margin-top: 12px;">
+        <button class="btn" onclick="pushWeek()">Push to Intervals.icu</button>
+        <button class="btn" onclick="clearWeek()">Clear Week</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVITIES TAB -->
+  <div class="tab" id="tab-acts">
+    <div class="card" style="margin-bottom: 12px; padding: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--txt);">📦 Backup FIT Files</div>
+          <div style="font-size: 12px; color: var(--txt2); margin-top: 4px;">Download all your activity FIT files from intervals.icu as a zip</div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <select id="backup-days" style="background: var(--bg); border: 1px solid var(--border); color: var(--txt); padding: 8px; border-radius: 6px; font-size: 12px;">
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="365">Last 1 year</option>
+            <option value="730">Last 2 years</option>
+            <option value="1825" selected>Last 5 years</option>
+            <option value="3650">Last 10 years</option>
+          </select>
+          <button onclick="downloadAllFits()" class="btn red" style="padding: 10px 16px; font-size: 12px;">Download All</button>
+        </div>
+      </div>
+      <div id="backup-progress" style="display: none; margin-top: 14px; padding: 12px; background: var(--bg); border-radius: 6px; border: 1px solid var(--border);">
+        <div id="backup-status" style="font-size: 13px; color: var(--txt); margin-bottom: 8px;">Preparing...</div>
+        <div style="background: var(--bg3); height: 8px; border-radius: 4px; overflow: hidden;">
+          <div id="backup-bar" style="background: var(--red); height: 100%; width: 0%; transition: width 0.3s;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--txt2);">
+          <span id="backup-count">0 / 0</span>
+          <button onclick="cancelBackup()" id="backup-cancel" style="background: none; border: none; color: var(--red); cursor: pointer; font-size: 11px; padding: 0;">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">Recent Activities</div>
+      <div id="acts-list">
+        <div class="loading"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>Loading activities...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COACH TAB -->
+  <div class="tab" id="tab-coach">
+    <div class="card" style="margin-bottom: 12px; padding: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--txt);">⚡ Weekly Plan Generator</div>
+          <div style="font-size: 12px; color: var(--txt2); margin-top: 4px;">AI analyzes your weakest zones and picks 2 key workouts for flat gravel racing. Other days = Z2.</div>
+        </div>
+        <button onclick="generateWeekPlan()" class="btn red" style="padding: 12px 20px; font-size: 12px;">Generate Week Plan</button>
+      </div>
+    </div>
+    <div class="card" style="height: calc(100vh - 300px); display: flex; flex-direction: column;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div class="card-hdr" style="margin: 0;">AI Coach</div>
+        <button class="btn" onclick="clearChat()" style="font-size: 10px; padding: 6px 10px;">Clear Chat</button>
+      </div>
+      <div id="chat-msgs" style="flex: 1; overflow-y: auto; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 12px 0;">
+        <div id="chat-welcome" style="padding: 20px;">
+          <div style="font-size: 14px; color: var(--txt); margin-bottom: 16px; line-height: 1.6;">
+            I'm your training coach. I have access to all your data: CTL/ATL/TSB, every recent ride with power data, athlete levels, FTP zones, race calendar, and your full session library. Ask me anything or click <strong>Generate Week Plan</strong> above for a tailored 2-workout week.
+          </div>
+          <div style="font-size: 11px; color: var(--txt2); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px;">Try asking:</div>
+          <div style="display: grid; gap: 8px;">
+            <div onclick="askSuggested('How is my current training load? Am I in a good place?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">💪 How is my current training load?</div>
+            <div onclick="askSuggested('Analyze my last 7 rides. What patterns do you see?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">📊 Analyze my recent rides</div>
+            <div onclick="askSuggested('What are my biggest weaknesses for a flat gravel race?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">⚡ What are my weaknesses for flat gravel?</div>
+            <div onclick="askSuggested('Should I do a recovery day tomorrow or push harder?')" style="background: var(--bg3); padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid var(--border);">😴 Recovery or push harder?</div>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <input id="chat-input" type="text" placeholder="Ask about training, recovery, race prep, anything..." style="flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; color: var(--txt); font-family: inherit; font-size: 14px;">
+        <button onclick="sendChat()" class="btn red" style="padding: 12px 20px;">Send</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SESSION PICKER MODAL -->
+<div class="modal" id="sess-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title">Session Library</div>
+      <button class="modal-close" onclick="closeSessPicker()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="search-bar">
+        <input type="text" id="sess-search" placeholder="Search sessions..." oninput="filterSessions()">
+        <select id="sess-dur" onchange="filterSessions()">
+          <option value="">All Durations</option>
+          <option value="30">30 min</option>
+          <option value="45">45 min</option>
+          <option value="60">60 min</option>
+          <option value="75">75 min</option>
+          <option value="90">90 min</option>
+          <option value="105">105 min</option>
+          <option value="120">120 min</option>
+          <option value="150">150 min</option>
+        </select>
+      </div>
+      <div class="sess-tabs" id="sess-tabs"></div>
+      <div class="sess-grid" id="sess-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SESSION DETAIL MODAL -->
+<div class="modal" id="sess-detail-modal">
+  <div class="modal-box" style="max-width: 700px;">
+    <div class="modal-hdr">
+      <div class="modal-title" id="detail-title">Session Details</div>
+      <button class="modal-close" onclick="closeSessDetail()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+        <div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase; margin-bottom: 4px;">Duration</div>
+          <div style="font-size: 20px; font-weight: 700;" id="detail-dur">--</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase; margin-bottom: 4px;">TSS</div>
+          <div style="font-size: 20px; font-weight: 700;" id="detail-tss">--</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase; margin-bottom: 4px;">Category</div>
+          <div style="font-size: 20px; font-weight: 700;" id="detail-cat">--</div>
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--txt2); text-transform: uppercase; margin-bottom: 8px;">Description</div>
+        <div style="font-size: 14px; line-height: 1.6;" id="detail-desc">--</div>
+      </div>
+      <div style="background: var(--bg3); padding: 14px; border-radius: 6px; margin-top: 16px;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--txt3); text-transform: uppercase; margin-bottom: 8px;">Power Zones (FTP 337W)</div>
+        <div style="font-size: 12px; line-height: 1.8; color: var(--txt2);">
+          Z2 Endurance: 189-209W<br>
+          Tempo: 263-280W<br>
+          Sweet Spot: 303-313W<br>
+          Threshold: 320-337W<br>
+          VO2 Max: 371-388W<br>
+          Anaerobic: 421W+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ACTIVITY DETAIL MODAL -->
+<div class="modal" id="activity-modal">
+  <div class="modal-box" style="max-width: 1000px;">
+    <div class="modal-hdr">
+      <div class="modal-title" id="activity-title">Activity Details</div>
+      <button class="modal-close" onclick="closeActivityDetail()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+        <div>
+          <div style="font-size: 10px; color: var(--txt3); text-transform: uppercase; margin-bottom: 4px;">Duration</div>
+          <div style="font-size: 16px; font-weight: 700;" id="act-detail-dur">--</div>
+        </div>
+        <div>
+          <div style="font-size: 10px; color: var(--txt3); text-transform: uppercase; margin-bottom: 4px;">TSS</div>
+          <div style="font-size: 16px; font-weight: 700;" id="act-detail-tss">--</div>
+        </div>
+        <div>
+          <div style="font-size: 10px; color: var(--txt3); text-transform: uppercase; margin-bottom: 4px;">Avg Power</div>
+          <div style="font-size: 16px; font-weight: 700;" id="act-detail-ap">--</div>
+        </div>
+        <div>
+          <div style="font-size: 10px; color: var(--txt3); text-transform: uppercase; margin-bottom: 4px;">Norm Power</div>
+          <div style="font-size: 16px; font-weight: 700;" id="act-detail-np">--</div>
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--txt2); text-transform: uppercase; margin-bottom: 10px;">Zone Distribution</div>
+        <div id="zone-table" style="background: var(--bg3); border-radius: 6px; padding: 12px; font-size: 12px;">
+          <div class="loading"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>Loading zones...</div>
+        </div>
+      </div>
+      
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: var(--txt2); text-transform: uppercase; margin-bottom: 10px;">Best Efforts</div>
+        <div id="best-efforts" style="background: var(--bg3); border-radius: 6px; padding: 12px; font-size: 12px;">
+          <div class="loading"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>Loading best efforts...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+const FTP = 337;
+
+// Global cache of all loaded data - AI Coach uses this
+const DATA = {
+  wellness: null,
+  activities: null,
+  powerCurve: null,
+  athleteLevels: null,
+  lastUpdated: null
+};
+
+// ════════════════════════════════════════════════════════════════════════
+//  SESSION LIBRARY (37 sessions)
+// ════════════════════════════════════════════════════════════════════════
+
+const SESS = {
+  // ACTIVATION (4)
+  activation_30: { cat: 'Activation', name: 'Activation 30', dur: 30, tss: 20, desc: '20min city exit + 10min Z2' },
+  activation_45: { cat: 'Activation', name: 'Activation 45', dur: 45, tss: 30, desc: '20min city exit + 25min Z2' },
+  activation_60: { cat: 'Activation', name: 'Activation 60', dur: 60, tss: 42, desc: '20min city exit + 40min Z2' },
+  activation_dawdle: { cat: 'Activation', name: 'Day-Before Dawdle', dur: 45, tss: 18, desc: '20min city exit + 25min easy spin' },
+  
+  // ENDURANCE (7)
+  z2_45: { cat: 'Endurance', name: 'Z2 45min', dur: 45, tss: 26, desc: '20min city exit + 25min @ 189-209W' },
+  z2_60: { cat: 'Endurance', name: 'Z2 60min', dur: 60, tss: 38, desc: '20min city exit + 40min @ 189-209W' },
+  z2_75: { cat: 'Endurance', name: 'Z2 75min', dur: 75, tss: 50, desc: '20min city exit + 55min @ 189-209W' },
+  z2_90: { cat: 'Endurance', name: 'Z2 90min', dur: 90, tss: 62, desc: '20min city exit + 70min @ 189-209W' },
+  z2_105: { cat: 'Endurance', name: 'Z2 105min', dur: 105, tss: 74, desc: '20min city exit + 85min @ 189-209W' },
+  z2_120: { cat: 'Endurance', name: 'Z2 2hr', dur: 120, tss: 86, desc: '20min city exit + 100min @ 189-209W' },
+  z2_150: { cat: 'Endurance', name: 'Z2 2.5hr', dur: 150, tss: 118, desc: '20min city exit + 130min @ 189-209W' },
+  
+  // TEMPO (5)
+  tempo_60: { cat: 'Tempo', name: 'Tempo 60', dur: 60, tss: 55, desc: '20min city exit + 3×10min @ 263-280W' },
+  tempo_75: { cat: 'Tempo', name: 'Tempo 75', dur: 75, tss: 72, desc: '20min city exit + 3×15min @ 263-280W' },
+  tempo_90: { cat: 'Tempo', name: 'Tempo 90', dur: 90, tss: 88, desc: '20min city exit + 3×20min @ 263-280W' },
+  tempo_105: { cat: 'Tempo', name: 'Tempo 105', dur: 105, tss: 105, desc: '20min city exit + 4×20min @ 263-280W' },
+  tempo_120: { cat: 'Tempo', name: 'Tempo 2hr', dur: 120, tss: 122, desc: '20min city exit + 4×23min @ 263-280W' },
+  
+  // SWEET SPOT (8)
+  ss_60: { cat: 'Sweet Spot', name: 'Sweet Spot 60', dur: 60, tss: 65, desc: '20min city exit + 3×10min @ 303-313W' },
+  ss_75: { cat: 'Sweet Spot', name: 'Sweet Spot 75', dur: 75, tss: 82, desc: '20min city exit + 3×15min @ 303-313W' },
+  ss_90: { cat: 'Sweet Spot', name: 'Sweet Spot 90', dur: 90, tss: 98, desc: '20min city exit + 4×15min @ 303-313W' },
+  ss_105: { cat: 'Sweet Spot', name: 'Sweet Spot 105', dur: 105, tss: 115, desc: '20min city exit + 4×18min @ 303-313W' },
+  ss_2x20: { cat: 'Sweet Spot', name: 'SS 2×20 KEY', dur: 75, tss: 92, desc: '20min city exit + 2×20min @ 303-313W (5min rest)' },
+  ss_ou_75: { cat: 'Sweet Spot', name: 'SS Over-Unders', dur: 75, tss: 88, desc: '20min city exit + 3×12min (2min @ 297W / 1min @ 317W)' },
+  long_ss_120: { cat: 'Sweet Spot', name: 'Long SS 2hr', dur: 120, tss: 125, desc: '20min city exit + 2×40min @ 303-313W' },
+  long_ss_150: { cat: 'Sweet Spot', name: 'Long SS 2.5hr', dur: 150, tss: 158, desc: '20min city exit + 2×60min @ 303-313W' },
+  
+  // THRESHOLD (4)
+  threshold_60: { cat: 'Threshold', name: 'Threshold 60', dur: 60, tss: 72, desc: '20min city exit + 3×10min @ 320-337W' },
+  threshold_75: { cat: 'Threshold', name: 'Threshold 75', dur: 75, tss: 90, desc: '20min city exit + 3×15min @ 320-337W' },
+  threshold_90: { cat: 'Threshold', name: 'Threshold 90', dur: 90, tss: 108, desc: '20min city exit + 4×15min @ 320-337W' },
+  threshold_ou: { cat: 'Threshold', name: 'Threshold O/U', dur: 75, tss: 96, desc: '20min city exit + 4×10min (2min @ 317W / 1min @ 354W)' },
+  
+  // VO2 MAX (5)
+  vo2_60: { cat: 'VO2 Max', name: 'VO2 Max 60', dur: 60, tss: 78, desc: '20min city exit + 5×5min @ 371-388W (3min rest)' },
+  vo2_75: { cat: 'VO2 Max', name: 'VO2 Max 75', dur: 75, tss: 95, desc: '20min city exit + 6×5min @ 371-388W (3min rest)' },
+  vo2_90: { cat: 'VO2 Max', name: 'VO2 Max 90', dur: 90, tss: 112, desc: '20min city exit + 7×5min @ 371-388W (3min rest)' },
+  vo2_on_off: { cat: 'VO2 Max', name: 'VO2 On-Offs', dur: 75, tss: 88, desc: '20min city exit + 4×(8×30/15sec @ 388W/200W)' },
+  vo2_pyramid: { cat: 'VO2 Max', name: 'VO2 Pyramid', dur: 75, tss: 92, desc: '20min city exit + 3/4/5/4/3min @ 371-388W' },
+  
+  // ANAEROBIC (2)
+  anaerobic_60: { cat: 'Anaerobic', name: 'Anaerobic Attacks', dur: 60, tss: 68, desc: '20min city exit + 10×30sec max attacks' },
+  sprint_60: { cat: 'Anaerobic', name: 'Sprint Power', dur: 60, tss: 52, desc: '20min city exit + 6×15sec max sprints' },
+  
+  // GYM (1)
+  gym_cycling: { cat: 'Gym', name: 'Gym Cycling', dur: 50, tss: 30, desc: 'Cycling-specific strength work' },
+  
+  // REST (1)
+  rest: { cat: 'Rest', name: 'Rest Day', dur: 0, tss: 0, desc: 'Complete rest and recovery' }
+};
+
+// ════════════════════════════════════════════════════════════════════════
+//  WEEK PLAN STATE
+// ════════════════════════════════════════════════════════════════════════
+
+let weekPlan = {
+  MON: { on: true, sess: null },
+  TUE: { on: true, sess: null },
+  WED: { on: true, sess: null },
+  THU: { on: true, sess: null },
+  FRI: { on: true, sess: null },
+  SAT: { on: true, sess: null },
+  SUN: { on: true, sess: null }
+};
+
+let currentPickDay = null;
+
+// ════════════════════════════════════════════════════════════════════════
+//  LOGIN SYSTEM
+// ════════════════════════════════════════════════════════════════════════
+
+const loginEl = document.getElementById('login');
+const loginPw = document.getElementById('login-pw');
+const loginBtn = document.getElementById('login-btn');
+const loginMsg = document.getElementById('login-msg');
+
+function showLogin() {
+  loginEl.classList.remove('hide');
+  setTimeout(() => loginPw.focus(), 100);
+}
+
+function hideLogin() {
+  loginEl.classList.add('hide');
+}
+
+async function doLogin() {
+  const pw = loginPw.value;
+  if (!pw) return;
+  
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Signing in...';
+  loginMsg.textContent = '';
+  
+  try {
+    const res = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await res.json();
+    
+    if (res.ok && data.token) {
+      localStorage.setItem('dash_token', data.token);
+      hideLogin();
+      loadAll();
+    } else {
+      loginMsg.textContent = 'Wrong password';
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+      loginPw.select();
+    }
+  } catch (e) {
+    loginMsg.textContent = 'Error: ' + e.message;
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Sign In';
+  }
+}
+
+loginBtn.addEventListener('click', doLogin);
+loginPw.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+function logout() {
+  localStorage.removeItem('dash_token');
+  showLogin();
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  API
+// ════════════════════════════════════════════════════════════════════════
+
+async function api(method, path, body = null) {
+  const token = localStorage.getItem('dash_token') || '';
+  if (!token) {
+    showLogin();
+    return null;
+  }
+  debugLog(`→ ${method} ${path}${body ? ' (with body)' : ''}`);
+  try {
+    const options = {
+      method,
+      headers: { 'Authorization': 'Bearer ' + token }
+    };
+    
+    // Add body for POST/PUT/PATCH
+    if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+      options.headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify(body);
+    }
+    
+    const res = await fetch('/api' + path, options);
+    if (res.status === 401) {
+      debugLog(`✗ 401 unauthorized - logging out`, 'var(--red)');
+      localStorage.removeItem('dash_token');
+      showLogin();
+      return null;
+    }
+    const text = await res.text();
+    if (!res.ok) {
+      debugLog(`✗ ${res.status} on ${path}: ${text.slice(0, 100)}`, 'var(--red)');
+      return null;
+    }
+    try {
+      const data = JSON.parse(text);
+      const summary = Array.isArray(data) ? `array[${data.length}]` : typeof data;
+      debugLog(`✓ ${path} → ${summary}`, 'var(--green)');
+      return data;
+    } catch (e) {
+      debugLog(`✗ JSON parse failed on ${path}: ${text.slice(0, 100)}`, 'var(--red)');
+      return null;
+    }
+  } catch (e) {
+    debugLog(`✗ fetch error: ${e.message}`, 'var(--red)');
+    return null;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════════════════════════════════
+
+document.querySelectorAll('.navtab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.navtab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+document.getElementById('logout-btn').addEventListener('click', logout);
+document.getElementById('refresh-btn').addEventListener('click', loadAll);
+
+// ════════════════════════════════════════════════════════════════════════
+//  DATA LOADING
+// ════════════════════════════════════════════════════════════════════════
+
+function setStatus(state, text) {
+  const s = document.getElementById('status');
+  s.className = 'status ' + (state || '');
+  document.getElementById('status-txt').textContent = text;
+}
+
+function debugLog(msg, color) {
+  const log = document.getElementById('debug-log');
+  if (!log) return;
+  const time = new Date().toLocaleTimeString();
+  const c = color || 'var(--txt2)';
+  log.innerHTML = `<div style="color: ${c};">[${time}] ${msg}</div>` + log.innerHTML;
+  console.log(`[${time}] ${msg}`);
+}
+
+function daysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
+let charts = {};
+
+async function loadWellness() {
+  const data = await api('GET', '/wellness?oldest=' + daysAgo(60) + '&newest=' + daysAgo(0));
+  if (!data || !Array.isArray(data)) return null;
+  
+  const today = data[data.length - 1] || {};
+  document.getElementById('m-ctl').textContent = Math.round(today.ctl || 0);
+  document.getElementById('m-atl').textContent = Math.round(today.atl || 0);
+  document.getElementById('m-tsb').textContent = Math.round((today.ctl || 0) - (today.atl || 0));
+  
+  const labels = data.map(d => d.id);
+  const ctl = data.map(d => d.ctl);
+  const atl = data.map(d => d.atl);
+  const tsb = data.map(d => (d.ctl || 0) - (d.atl || 0));
+  
+  if (charts.fit) charts.fit.destroy();
+  charts.fit = new Chart(document.getElementById('fitChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'CTL', data: ctl, borderColor: '#3b82f6', tension: .3, pointRadius: 0 },
+        { label: 'ATL', data: atl, borderColor: '#E01A22', tension: .3, pointRadius: 0 },
+        { label: 'TSB', data: tsb, borderColor: '#22c55e', tension: .3, pointRadius: 0 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#9090a0', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#505060', maxTicksLimit: 8 }, grid: { color: '#2a2a35' } },
+        y: { ticks: { color: '#505060' }, grid: { color: '#2a2a35' } }
+      }
+    }
+  });
+  
+  DATA.wellness = data;
+  return data;
+}
+
+async function loadPowerCurve() {
+  // Try to fetch power curve from intervals.icu
+  let peaks = { '60m': 0, '20m': 0, '5m': 0, '1m': 0 };
+  
+  try {
+    // intervals.icu uses /power-curves (plural) with a curves param
+    const data = await api('GET', '/power-curves?curves=42d');
+    let curve = null;
+    if (data) {
+      // Response format: { "42d": [array] } OR { curves: [{id, data}] }
+      if (data['42d']) curve = data['42d'];
+      else if (data.curves && data.curves[0]) curve = data.curves[0].data;
+      else if (Array.isArray(data)) curve = data;
+      else if (data.data) curve = data.data;
+    }
+    if (curve && Array.isArray(curve)) {
+      peaks = {
+        '60m': curve[3599] || 0,
+        '20m': curve[1199] || 0,
+        '5m': curve[299] || 0,
+        '1m': curve[59] || 0
+      };
+      debugLog(`Power curve loaded: 20m=${Math.round(peaks['20m'])}W, 5m=${Math.round(peaks['5m'])}W`, 'var(--green)');
+    }
+  } catch (e) {
+    console.warn('Power curve API failed', e);
+  }
+  
+  // If power curve API didn't work, estimate from FTP
+  if (peaks['20m'] === 0) {
+    debugLog(`Power curve missing, using FTP estimates`, 'var(--yellow)');
+    peaks['60m'] = FTP * 0.85;
+    peaks['20m'] = FTP / 0.95;
+    peaks['5m'] = FTP * 1.15;
+    peaks['1m'] = FTP * 1.4;
+  }
+  
+  const weight = 98;
+  const wkg60m = peaks['60m'] / weight;
+  const wkg20m = peaks['20m'] / weight;
+  const wkg5m = peaks['5m'] / weight;
+  const wkg1m = peaks['1m'] / weight;
+  
+  // TrainerRoad-style athlete levels (0-10 scale)
+  const levels = {
+    endurance: Math.min(10, Math.max(0, (wkg60m - 2.0) * 3.5)),
+    tempo: Math.min(10, Math.max(0, (wkg20m * 0.9 - 2.2) * 3.2)),
+    sweetspot: Math.min(10, Math.max(0, (wkg20m * 0.95 - 2.5) * 3.0)),
+    threshold: Math.min(10, Math.max(0, (wkg20m - 2.8) * 2.8)),
+    vo2: Math.min(10, Math.max(0, (wkg5m - 3.5) * 2.5)),
+    anaerobic: Math.min(10, Math.max(0, (wkg1m - 5.0) * 2.0))
+  };
+  
+  const zones = [
+    { name: 'Endurance', score: levels.endurance },
+    { name: 'Tempo', score: levels.tempo },
+    { name: 'Sweet Spot', score: levels.sweetspot },
+    { name: 'Threshold', score: levels.threshold },
+    { name: 'VO2 Max', score: levels.vo2 },
+    { name: 'Anaerobic', score: levels.anaerobic }
+  ];
+  
+  DATA.powerCurve = peaks;
+  DATA.athleteLevels = levels;
+  
+  const container = document.getElementById('athlete-levels-container');
+  
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: 140px 60px 1fr; gap: 16px; align-items: center; margin-bottom: 20px;">
+      ${zones.map(z => `
+        <div style="font-size: 14px; font-weight: 600;">${z.name}</div>
+        <div style="font-size: 28px; font-weight: 800; text-align: right;">${z.score.toFixed(1)}</div>
+        <div style="position: relative; height: 28px; background: var(--bg3); border-radius: 4px; overflow: hidden;">
+          <div style="background: var(--red); height: 100%; width: ${z.score * 10}%; transition: width .8s ease-out;"></div>
+        </div>
+      `).join('')}
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 140px 60px 1fr; gap: 16px; margin-top: 8px;">
+      <div></div>
+      <div></div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--txt3); padding: 0 2px;">
+        <span>0</span><span>2</span><span>4</span><span>6</span><span>8</span><span>10</span>
+      </div>
+    </div>
+  `;
+  
+  return peaks;
+}
+
+async function loadActivities() {
+  const data = await api('GET', '/activities?oldest=' + daysAgo(120) + '&newest=' + daysAgo(0));
+  if (!data || !Array.isArray(data)) return null;
+  
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const weekTss = data
+    .filter(a => new Date(a.start_date_local) >= sevenDaysAgo)
+    .reduce((sum, a) => sum + (a.icu_training_load || 0), 0);
+  document.getElementById('m-wktss').textContent = Math.round(weekTss);
+  
+  const weeks = {};
+  data.forEach(a => {
+    const d = new Date(a.start_date_local);
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const key = monday.toISOString().slice(0, 10);
+    weeks[key] = (weeks[key] || 0) + (a.icu_training_load || 0);
+  });
+  
+  const sortedWeeks = Object.entries(weeks).sort().slice(-16);
+  
+  if (charts.wk) charts.wk.destroy();
+  charts.wk = new Chart(document.getElementById('wkChart'), {
+    type: 'bar',
+    data: {
+      labels: sortedWeeks.map(w => w[0].slice(5)),
+      datasets: [{
+        label: 'Weekly TSS',
+        data: sortedWeeks.map(w => Math.round(w[1])),
+        backgroundColor: '#E01A22'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#505060' }, grid: { display: false } },
+        y: { ticks: { color: '#505060' }, grid: { color: '#2a2a35' } }
+      }
+    }
+  });
+  
+  const list = document.getElementById('acts-list');
+  const sorted = data.sort((a, b) => new Date(b.start_date_local) - new Date(a.start_date_local));
+  const recent = sorted.slice(0, 30);
+  list.innerHTML = recent.map(a => {
+    const dur = Math.round((a.moving_time || 0) / 60);
+    const tss = Math.round(a.icu_training_load || 0);
+    const np = Math.round(a.icu_normalized_power || a.normalized_power || 0);
+    const ap = Math.round(a.average_watts || a.avg_watts || a.average_power || a.icu_average_watts || 0);
+    return `
+      <div class="act-row" onclick="openActivityDetail('${a.id}')" style="cursor: pointer;">
+        <div class="act-date">${a.start_date_local?.slice(0, 10) || ''}</div>
+        <div class="act-name">${a.name || 'Ride'}</div>
+        <div class="act-stat"><div class="v">${dur}m</div><div class="l">Dur</div></div>
+        <div class="act-stat"><div class="v">${tss}</div><div class="l">TSS</div></div>
+        <div class="act-stat"><div class="v">${ap ? ap + 'W' : '--'}</div><div class="l">AP</div></div>
+        <div class="act-stat"><div class="v">${np ? np + 'W' : '--'}</div><div class="l">NP</div></div>
+      </div>
+    `;
+  }).join('');
+  
+  DATA.activities = data;
+  return data;
+}
+
+async function loadAll() {
+  setStatus('', 'Loading...');
+  
+  const results = await Promise.allSettled([
+    loadWellness(),
+    loadActivities(),
+    loadPowerCurve()
+  ]);
+  
+  const names = ['Wellness', 'Activities', 'PowerCurve'];
+  const failed = [];
+  
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      failed.push(`${names[i]} (exception: ${r.reason?.message || 'unknown'})`);
+      console.error(`[loadAll] ${names[i]} threw:`, r.reason);
+    } else if (r.value === null || r.value === undefined) {
+      failed.push(`${names[i]} (no data)`);
+      console.warn(`[loadAll] ${names[i]} returned null/undefined`);
+    } else {
+      console.log(`[loadAll] ${names[i]} OK`);
+    }
+  });
+  
+  if (failed.length === 0) {
+    setStatus('ok', 'Connected · ' + new Date().toLocaleTimeString());
+  } else if (failed.length === 3) {
+    setStatus('err', 'All APIs failed - check console');
+  } else {
+    setStatus('err', `Failed: ${failed.join(', ')}`);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  WORKOUT BUILDER
+// ════════════════════════════════════════════════════════════════════════
+
+function buildWeekGrid() {
+  const grid = document.getElementById('week-grid');
+  const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  
+  grid.innerHTML = days.map(day => {
+    const d = weekPlan[day];
+    const sess = d.sess ? SESS[d.sess] : null;
+    return `
+      <div class="day-card ${d.on ? 'active' : ''}" data-day="${day}">
+        <div class="day-hdr">
+          <span>${day}</span>
+          <div class="day-toggle ${d.on ? 'on' : ''}" onclick="toggleDay('${day}', event)"></div>
+        </div>
+        ${sess ? `
+          <div class="day-sess" onclick="openSessDetail('${d.sess}')" style="margin-bottom: 4px;">${sess.name}</div>
+          <div class="day-tss" style="margin-bottom: 6px;">${sess.dur}min · ${sess.tss} TSS</div>
+          <div style="font-size: 10px; color: var(--txt3); cursor: pointer;" onclick="openSessPicker('${day}')">Change session</div>
+        ` : `
+          <div class="day-sess" onclick="openSessPicker('${day}')" style="color: var(--txt3);">+ Add Session</div>
+        `}
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleDay(day, e) {
+  e.stopPropagation();
+  weekPlan[day].on = !weekPlan[day].on;
+  buildWeekGrid();
+}
+
+function openSessPicker(day) {
+  currentPickDay = day;
+  document.getElementById('sess-modal').classList.add('show');
+  buildSessLibrary();
+}
+
+function closeSessPicker() {
+  document.getElementById('sess-modal').classList.remove('show');
+  currentPickDay = null;
+}
+
+function openSessDetail(sessKey) {
+  const s = SESS[sessKey];
+  if (!s) return;
+  
+  document.getElementById('detail-title').textContent = s.name;
+  document.getElementById('detail-dur').textContent = s.dur + ' min';
+  document.getElementById('detail-tss').textContent = s.tss + ' TSS';
+  document.getElementById('detail-cat').textContent = s.cat;
+  document.getElementById('detail-desc').textContent = s.desc;
+  
+  document.getElementById('sess-detail-modal').classList.add('show');
+}
+
+function closeSessDetail() {
+  document.getElementById('sess-detail-modal').classList.remove('show');
+}
+
+async function openActivityDetail(activityId) {
+  document.getElementById('activity-modal').classList.add('show');
+  
+  // Fetch activity details from intervals.icu
+  const actData = await api('GET', `/activities/${activityId}`);
+  if (!actData) {
+    closeActivityDetail();
+    return;
+  }
+  
+  // Populate header
+  document.getElementById('activity-title').textContent = actData.name || 'Activity';
+  document.getElementById('act-detail-dur').textContent = Math.round((actData.moving_time || 0) / 60) + ' min';
+  document.getElementById('act-detail-tss').textContent = Math.round(actData.icu_training_load || 0);
+  document.getElementById('act-detail-ap').textContent = Math.round(actData.average_watts || actData.icu_average_watts || 0) + 'W';
+  document.getElementById('act-detail-np').textContent = Math.round(actData.icu_normalized_power || 0) + 'W';
+  
+  // Build zone table
+  const zones = actData.power_load || actData.icu_power_load || {};
+  const zoneTable = document.getElementById('zone-table');
+  zoneTable.innerHTML = `
+    <div style="display: grid; grid-template-columns: 60px 120px 100px 80px 60px; gap: 8px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--txt2);">
+      <div>Zone</div>
+      <div>Name</div>
+      <div>Range</div>
+      <div>Time</div>
+      <div>%</div>
+    </div>
+    ${Object.entries({
+      'Z1': { name: 'Recovery', range: '0-55%', time: zones.z1 || 0 },
+      'Z2': { name: 'Endurance', range: '56-75%', time: zones.z2 || 0 },
+      'Z3': { name: 'Tempo', range: '76-90%', time: zones.z3 || 0 },
+      'Z4': { name: 'Threshold', range: '91-105%', time: zones.z4 || 0 },
+      'Z5': { name: 'VO2 Max', range: '106-120%', time: zones.z5 || 0 },
+      'Z6': { name: 'Anaerobic', range: '121-150%', time: zones.z6 || 0 },
+      'Z7': { name: 'Neuromuscular', range: '151%+', time: zones.z7 || 0 }
+    }).map(([z, d]) => {
+      const mins = Math.round(d.time / 60);
+      const pct = ((d.time / (actData.moving_time || 1)) * 100).toFixed(1);
+      return `
+        <div style="display: grid; grid-template-columns: 60px 120px 100px 80px 60px; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border);">
+          <div style="font-weight: 600;">${z}</div>
+          <div>${d.name}</div>
+          <div style="color: var(--txt2);">${d.range}</div>
+          <div>${mins}m ${Math.round(d.time % 60)}s</div>
+          <div style="color: var(--txt2);">${pct}%</div>
+        </div>
+      `;
+    }).join('')}
+  `;
+  
+  // Fetch power curve for best efforts
+  const curveData = await api('GET', `/activities/${activityId}/power-curve`);
+  const efforts = document.getElementById('best-efforts');
+  
+  if (curveData && curveData.data) {
+    const curve = curveData.data;
+    const weight = 98;
+    
+    efforts.innerHTML = `
+      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;">
+        ${[
+          { dur: '5s', idx: 4 },
+          { dur: '30s', idx: 29 },
+          { dur: '1m', idx: 59 },
+          { dur: '5m', idx: 299 },
+          { dur: '20m', idx: 1199 },
+          { dur: '60m', idx: 3599 }
+        ].map(e => {
+          const watts = Math.round(curve[e.idx] || 0);
+          const wkg = (watts / weight).toFixed(2);
+          return `
+            <div style="text-align: center;">
+              <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">${watts}W</div>
+              <div style="font-size: 11px; color: var(--txt3); text-transform: uppercase;">${e.dur}</div>
+              <div style="font-size: 10px; color: var(--txt2); margin-top: 2px;">${wkg} W/kg</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } else {
+    efforts.innerHTML = '<div style="text-align: center; color: var(--txt2); padding: 20px;">No power curve data available</div>';
+  }
+}
+
+function closeActivityDetail() {
+  document.getElementById('activity-modal').classList.remove('show');
+}
+
+function buildSessLibrary() {
+  const cats = ['All', 'Activation', 'Endurance', 'Tempo', 'Sweet Spot', 'Threshold', 'VO2 Max', 'Anaerobic', 'Gym', 'Rest'];
+  const tabs = document.getElementById('sess-tabs');
+  tabs.innerHTML = cats.map((c, i) => 
+    `<div class="sess-tab ${i === 0 ? 'active' : ''}" data-cat="${c}" onclick="filterByTab('${c}')">${c}</div>`
+  ).join('');
+  
+  filterSessions();
+}
+
+let currentCat = 'All';
+
+function filterByTab(cat) {
+  currentCat = cat;
+  document.querySelectorAll('.sess-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`[data-cat="${cat}"]`).classList.add('active');
+  filterSessions();
+}
+
+function filterSessions() {
+  const search = document.getElementById('sess-search').value.toLowerCase();
+  const dur = document.getElementById('sess-dur').value;
+  
+  const filtered = Object.entries(SESS).filter(([key, s]) => {
+    if (currentCat !== 'All' && s.cat !== currentCat) return false;
+    if (dur && s.dur !== parseInt(dur)) return false;
+    if (search && !s.name.toLowerCase().includes(search) && !s.desc.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  
+  const grid = document.getElementById('sess-grid');
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--txt2)">No sessions found</div>';
+    return;
+  }
+  
+  grid.innerHTML = filtered.map(([key, s]) => `
+    <div class="sess-item" onclick="selectSession('${key}')">
+      <div class="sess-name">${s.name}</div>
+      <div class="sess-desc">${s.desc}</div>
+      <div class="sess-meta">
+        <span>${s.dur}min</span>
+        <span>${s.tss} TSS</span>
+        <span>${s.cat}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectSession(key) {
+  if (currentPickDay) {
+    weekPlan[currentPickDay].sess = key;
+    buildWeekGrid();
+    closeSessPicker();
+  }
+}
+
+function clearWeek() {
+  if (!confirm('Clear all sessions?')) return;
+  Object.keys(weekPlan).forEach(day => {
+    weekPlan[day].sess = null;
+  });
+  buildWeekGrid();
+}
+
+async function pushWeek() {
+  const today = new Date();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  
+  const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  let pushed = 0;
+  
+  for (let i = 0; i < days.length; i++) {
+    const day = days[i];
+    const d = weekPlan[day];
+    if (!d.on || !d.sess) continue;
+    
+    const sess = SESS[d.sess];
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    const dateStr = date.toISOString().slice(0, 10);
+    
+    const event = {
+      start_date_local: dateStr,
+      name: sess.name,
+      description: sess.desc,
+      category: 'WORKOUT'
+    };
+    
+    try {
+      await api('POST', '/events', event);
+      pushed++;
+    } catch (e) {
+      console.error('Failed to push', day, e);
+    }
+  }
+  
+  alert(`Pushed ${pushed} sessions to Intervals.icu!`);
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  BULK FIT FILE BACKUP
+// ════════════════════════════════════════════════════════════════════════
+
+let backupCancelled = false;
+
+function cancelBackup() {
+  backupCancelled = true;
+  debugLog('Backup cancelled by user', 'var(--yellow)');
+}
+
+function updateBackupProgress(status, current, total) {
+  document.getElementById('backup-status').textContent = status;
+  document.getElementById('backup-count').textContent = `${current} / ${total}`;
+  const pct = total > 0 ? (current / total) * 100 : 0;
+  document.getElementById('backup-bar').style.width = pct + '%';
+}
+
+async function downloadAllFits() {
+  if (typeof JSZip === 'undefined') {
+    alert('JSZip library not loaded. Hard-refresh the page (Cmd+Shift+R).');
+    return;
+  }
+  
+  const days = parseInt(document.getElementById('backup-days').value);
+  const label = document.getElementById('backup-days').selectedOptions[0].textContent;
+  
+  if (!confirm(`This will download ALL your activity FIT files from ${label}.\n\nThis may take several minutes for large date ranges.\n\nContinue?`)) {
+    return;
+  }
+  
+  backupCancelled = false;
+  const panel = document.getElementById('backup-progress');
+  panel.style.display = 'block';
+  
+  try {
+    // Step 1: Fetch all activities in range
+    updateBackupProgress('Fetching activity list...', 0, 0);
+    debugLog(`→ Fetching activities for ${label}`);
+    
+    const activities = await api('GET', `/activities?oldest=${daysAgo(days)}&newest=${daysAgo(0)}`);
+    if (!activities || !Array.isArray(activities)) {
+      throw new Error('Failed to fetch activity list');
+    }
+    
+    // Filter to rides with FIT data (skip manual entries)
+    const rides = activities.filter(a => 
+      (a.type === 'Ride' || a.type === 'VirtualRide' || a.type === 'GravelRide' || a.type === 'MountainBikeRide')
+      && !a.is_manual
+    );
+    
+    debugLog(`Found ${rides.length} rides to download`, 'var(--green)');
+    
+    if (rides.length === 0) {
+      alert('No rides found in selected date range.');
+      panel.style.display = 'none';
+      return;
+    }
+    
+    if (!confirm(`Found ${rides.length} rides. Estimated download size: ~${Math.round(rides.length * 0.3)}MB.\n\nProceed?`)) {
+      panel.style.display = 'none';
+      return;
+    }
+    
+    // Step 2: Download each FIT file
+    const zip = new JSZip();
+    const fitFolder = zip.folder('fit_files');
+    const token = localStorage.getItem('dash_token');
+    let done = 0;
+    let failed = 0;
+    const failures = [];
+    
+    for (let i = 0; i < rides.length; i++) {
+      if (backupCancelled) {
+        debugLog('Backup stopped', 'var(--yellow)');
+        break;
+      }
+      
+      const ride = rides[i];
+      updateBackupProgress(`Downloading ${ride.start_date_local?.slice(0,10)}: ${ride.name?.slice(0, 40) || 'ride'}...`, i, rides.length);
+      
+      try {
+        const res = await fetch(`/fit/${ride.id}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        
+        const blob = await res.blob();
+        if (blob.size < 100) {
+          throw new Error('Empty FIT file');
+        }
+        
+        // Filename: YYYY-MM-DD_name_id.fit
+        const date = ride.start_date_local?.slice(0, 10) || 'unknown';
+        const safeName = (ride.name || 'ride').replace(/[^a-z0-9_\-]/gi, '_').slice(0, 50);
+        const filename = `${date}_${safeName}_${ride.id}.fit`;
+        
+        fitFolder.file(filename, blob);
+        done++;
+      } catch (e) {
+        failed++;
+        failures.push(`${ride.start_date_local?.slice(0,10)} - ${ride.name}: ${e.message}`);
+        console.warn('Failed:', ride.id, e);
+      }
+      
+      // Small delay to be respectful to intervals.icu
+      if (i % 10 === 9) await new Promise(r => setTimeout(r, 500));
+    }
+    
+    if (backupCancelled || done === 0) {
+      panel.style.display = 'none';
+      alert(backupCancelled ? `Cancelled. Downloaded ${done} files so far.` : 'No files downloaded.');
+      return;
+    }
+    
+    // Step 3: Add a manifest file with metadata
+    updateBackupProgress('Building zip archive...', done, rides.length);
+    
+    const manifest = {
+      generated: new Date().toISOString(),
+      athlete_id: 'i222534',
+      date_range: label,
+      total_rides_found: rides.length,
+      successfully_downloaded: done,
+      failed: failed,
+      failures: failures.slice(0, 50)
+    };
+    zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+    
+    // Also save activity metadata as CSV
+    const csvHeader = 'date,name,type,duration_min,distance_km,tss,avg_power,np,if,id\n';
+    const csvRows = rides.map(r => [
+      r.start_date_local?.slice(0,10) || '',
+      `"${(r.name || '').replace(/"/g, '""')}"`,
+      r.type || '',
+      Math.round((r.moving_time || 0) / 60),
+      ((r.distance || 0) / 1000).toFixed(1),
+      Math.round(r.icu_training_load || 0),
+      Math.round(r.average_watts || r.icu_average_watts || 0),
+      Math.round(r.icu_normalized_power || 0),
+      r.icu_normalized_power ? (r.icu_normalized_power / 337).toFixed(2) : '',
+      r.id
+    ].join(',')).join('\n');
+    zip.file('activities_summary.csv', csvHeader + csvRows);
+    
+    // Step 4: Generate and download zip
+    updateBackupProgress('Generating download...', done, rides.length);
+    const blob = await zip.generateAsync({ 
+      type: 'blob', 
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 }
+    }, (meta) => {
+      updateBackupProgress(`Zipping: ${meta.percent.toFixed(0)}%`, done, rides.length);
+    });
+    
+    // Trigger download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `intervals_icu_backup_${new Date().toISOString().slice(0,10)}_${done}files.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    updateBackupProgress(`✓ Done! Downloaded ${done} of ${rides.length} FIT files`, done, rides.length);
+    debugLog(`Backup complete: ${done} files (${failed} failed)`, 'var(--green)');
+    
+    setTimeout(() => {
+      panel.style.display = 'none';
+      alert(`Backup complete!\n\n✓ Downloaded: ${done} FIT files\n${failed > 0 ? `✗ Failed: ${failed}` : ''}\n\nSize: ${(blob.size / 1024 / 1024).toFixed(1)} MB`);
+    }, 1500);
+    
+  } catch (e) {
+    debugLog(`Backup error: ${e.message}`, 'var(--red)');
+    panel.style.display = 'none';
+    alert(`Backup failed: ${e.message}`);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  AI COACH CHAT
+// ════════════════════════════════════════════════════════════════════════
+
+let chatHistory = [];
+
+function renderMarkdown(text) {
+  // Simple markdown: **bold**, *italic*, `code`, lists, line breaks
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code style="background: var(--bg4); padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 12px;">$1</code>')
+    .replace(/^### (.*$)/gm, '<h4 style="margin: 12px 0 6px 0; font-size: 14px; font-weight: 700;">$1</h4>')
+    .replace(/^## (.*$)/gm, '<h3 style="margin: 14px 0 8px 0; font-size: 15px; font-weight: 700;">$1</h3>')
+    .replace(/^# (.*$)/gm, '<h2 style="margin: 16px 0 10px 0; font-size: 16px; font-weight: 700;">$1</h2>')
+    .replace(/^- (.*$)/gm, '<div style="margin: 4px 0 4px 16px; position: relative;"><span style="position: absolute; left: -12px;">•</span>$1</div>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+function addChatMsg(role, text) {
+  // Hide welcome screen on first message
+  const welcome = document.getElementById('chat-welcome');
+  if (welcome) welcome.remove();
+  
+  const msgs = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.style.cssText = `margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start;`;
+  
+  const isUser = role === 'user';
+  const rendered = isUser ? text : renderMarkdown(text);
+  
+  div.innerHTML = `
+    <div style="width: 32px; height: 32px; border-radius: 50%; background: ${isUser ? 'var(--red)' : 'var(--blue)'}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; color: #fff;">${isUser ? 'YOU' : 'AI'}</div>
+    <div style="flex: 1; background: ${isUser ? 'var(--bg3)' : 'var(--bg2)'}; padding: 12px 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; border: 1px solid var(--border);">${rendered}</div>
+  `;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function buildContext() {
+  // Build comprehensive context from all loaded data
+  let context = `You are Augustinas's personal cycling coach. You're direct, knowledgeable, and evidence-based. Use his actual data to give specific advice.
+
+ATHLETE PROFILE:
+- Name: Augustinas
+- FTP: 337W
+- Weight: 98kg
+- Age: 24
+- W/kg: 3.4 at FTP
+- Background: Physiotherapist at Widen Arena, evidence-based strength rehab specialist
+- Discipline: Gravel cycling (competitive)
+
+POWER ZONES (FTP-based):
+- Z1 Active Recovery: <169W
+- Z2 Endurance: 189-219W
+- Z3 Tempo: 256-293W
+- Sweet Spot: 297-317W (95-105% FTP)
+- Z4 Threshold: 320-354W
+- Z5 VO2 Max: 371-388W
+- Z6 Anaerobic: 421W+
+
+UPCOMING RACES:
+- VeloPeak 500 — July 6, 2026 (gravel ultra)
+- Megre Gravel — August 1, 2026
+
+CURRENT TRAINING METRICS:`;
+
+  // Add wellness data (CTL/ATL/TSB)
+  if (DATA.wellness && DATA.wellness.length > 0) {
+    const today = DATA.wellness[DATA.wellness.length - 1] || {};
+    const yesterday = DATA.wellness[DATA.wellness.length - 2] || {};
+    const weekAgo = DATA.wellness[DATA.wellness.length - 8] || {};
+    
+    context += `
+- CTL (Fitness, 42-day avg): ${Math.round(today.ctl || 0)} (${Math.round(weekAgo.ctl || 0)} a week ago, trend: ${(today.ctl || 0) > (weekAgo.ctl || 0) ? 'building' : 'declining'})
+- ATL (Fatigue, 7-day avg): ${Math.round(today.atl || 0)}
+- TSB (Form): ${Math.round((today.ctl || 0) - (today.atl || 0))} ${(today.ctl - today.atl) > 5 ? '(fresh)' : (today.ctl - today.atl) < -20 ? '(very fatigued)' : (today.ctl - today.atl) < -10 ? '(fatigued)' : '(neutral)'}
+- Yesterday's TSB: ${Math.round((yesterday.ctl || 0) - (yesterday.atl || 0))}`;
+  }
+  
+  // Add recent activities (last 14 days)
+  if (DATA.activities && DATA.activities.length > 0) {
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    const recent = DATA.activities
+      .filter(a => new Date(a.start_date_local) >= fourteenDaysAgo)
+      .sort((a, b) => new Date(b.start_date_local) - new Date(a.start_date_local))
+      .slice(0, 14);
+    
+    const weekTss = DATA.activities
+      .filter(a => {
+        const d = new Date(a.start_date_local);
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return d >= weekAgo;
+      })
+      .reduce((s, a) => s + (a.icu_training_load || 0), 0);
+    
+    context += `
+
+THIS WEEK:
+- Total TSS: ${Math.round(weekTss)}
+- Rides: ${recent.filter(a => {
+      const d = new Date(a.start_date_local);
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return d >= weekAgo;
+    }).length}
+
+RECENT RIDES (last 14 days, newest first):`;
+    
+    recent.forEach(a => {
+      const dur = Math.round((a.moving_time || 0) / 60);
+      const tss = Math.round(a.icu_training_load || 0);
+      const np = Math.round(a.icu_normalized_power || 0);
+      const ap = Math.round(a.average_watts || a.icu_average_watts || 0);
+      const intensity = np ? (np / FTP).toFixed(2) : '--';
+      context += `
+- ${a.start_date_local?.slice(0, 10)}: "${a.name}" — ${dur}min, ${tss} TSS, AP ${ap}W, NP ${np}W (IF ${intensity})`;
+    });
+  }
+  
+  // Add athlete levels
+  if (DATA.athleteLevels) {
+    const L = DATA.athleteLevels;
+    context += `
+
+ATHLETE LEVELS (0-10 scale):
+- Endurance: ${L.endurance.toFixed(1)}
+- Tempo: ${L.tempo.toFixed(1)}
+- Sweet Spot: ${L.sweetspot.toFixed(1)}
+- Threshold: ${L.threshold.toFixed(1)}
+- VO2 Max: ${L.vo2.toFixed(1)}
+- Anaerobic: ${L.anaerobic.toFixed(1)}`;
+  }
+  
+  // Add power curve peaks
+  if (DATA.powerCurve) {
+    const P = DATA.powerCurve;
+    context += `
+
+PEAK POWERS (42-day window):
+- 1 min: ${Math.round(P['1m'])}W (${(P['1m']/98).toFixed(2)} W/kg)
+- 5 min: ${Math.round(P['5m'])}W (${(P['5m']/98).toFixed(2)} W/kg)
+- 20 min: ${Math.round(P['20m'])}W (${(P['20m']/98).toFixed(2)} W/kg)
+- 60 min: ${Math.round(P['60m'])}W (${(P['60m']/98).toFixed(2)} W/kg)`;
+  }
+  
+  // Add session library
+  context += `
+
+AVAILABLE SESSION LIBRARY (use these exact names when recommending workouts):`;
+  Object.entries(SESS).forEach(([key, s]) => {
+    context += `
+- [${s.cat}] "${s.name}" — ${s.dur}min, ${s.tss} TSS — ${s.desc}`;
+  });
+  
+  context += `
+
+PRIMARY RACE GOAL: Flat gravel racing
+- VeloPeak 500 — July 6, 2026 (gravel ultra, flat profile)
+- Demands: sustained threshold/tempo power for hours, ability to surge for attacks/positioning
+- KEY abilities for flat gravel: Threshold > Sweet Spot > Endurance > VO2 Max > Anaerobic
+- LESS critical: Pure climbing power, sprint anaerobic capacity
+
+COACHING STYLE:
+- Be direct and specific with numbers and watts
+- Reference his actual data when giving advice
+- Use power zones, TSS targets, specific watt ranges
+- Don't be vague — give concrete recommendations
+- Format with markdown (use **bold** for key points, bullet lists, headers)
+- Push back if he's asking for something stupid (overtraining, etc.)
+- He's a physiotherapist so you can use technical language about training adaptations
+- When recommending workouts, use EXACT names from the session library above`;
+  
+  return context;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  
+  input.value = '';
+  addChatMsg('user', msg);
+  chatHistory.push({ role: 'user', content: msg });
+  
+  const msgs = document.getElementById('chat-msgs');
+  const typing = document.createElement('div');
+  typing.id = 'typing';
+  typing.style.cssText = 'padding: 12px 16px; color: var(--txt2); font-size: 12px; display: flex; align-items: center; gap: 10px;';
+  typing.innerHTML = `
+    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: #fff;">AI</div>
+    <div><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> Thinking...</div>
+  `;
+  msgs.appendChild(typing);
+  msgs.scrollTop = msgs.scrollHeight;
+  
+  try {
+    const context = buildContext();
+    
+    const res = await fetch('/claude', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('dash_token')
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2048,
+        system: context,
+        messages: chatHistory
+      })
+    });
+    
+    typing.remove();
+    
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('Chat error', res.status, errText);
+      addChatMsg('coach', `**Error ${res.status}**: ${errText.slice(0, 200) || 'Server error'}\n\nMake sure ANTHROPIC_API_KEY is set on your Render server.`);
+      return;
+    }
+    
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || data.error?.message || 'No response received.';
+    addChatMsg('coach', reply);
+    chatHistory.push({ role: 'assistant', content: reply });
+    
+    // Keep last 20 messages
+    if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+  } catch (e) {
+    document.getElementById('typing')?.remove();
+    console.error('Chat exception', e);
+    addChatMsg('coach', `**Connection error**: ${e.message}`);
+  }
+}
+
+function askSuggested(question) {
+  const input = document.getElementById('chat-input');
+  input.value = question;
+  sendChat();
+}
+
+async function generateWeekPlan() {
+  // Check we have data
+  if (!DATA.wellness || !DATA.activities) {
+    alert('Wait for training data to load first');
+    return;
+  }
+  
+  const displayMsg = '🎯 Generate this week\'s training plan — 2 key sessions targeting my weakest zones for flat gravel racing';
+  
+  const fullPrompt = `Analyze my training data and design THIS WEEK's plan for flat gravel racing.
+
+REQUIREMENTS:
+1. Identify my **2 weakest abilities** that matter most for flat gravel (Threshold > Sweet Spot > Endurance > VO2 > Anaerobic)
+2. Recommend **exactly 2 hard sessions** from my session library that target those weaknesses
+3. The other days should be **Z2 endurance rides** or rest, based on my current TSB/recovery state
+4. Account for current CTL/ATL/TSB — don't prescribe more load than I can absorb
+
+OUTPUT FORMAT (use this structure exactly):
+
+## 🎯 Weak Zone Analysis
+[2-3 sentences on which zones are weakest and why they matter for flat gravel]
+
+## 🔥 This Week's 2 Key Sessions
+
+### Session 1: [Day, e.g. Tuesday] — [EXACT session name from library]
+- **What**: brief description
+- **Why**: specific reason based on my data (e.g., "your Threshold level is 3.3, lowest of all")
+- **Target watts**: specific range
+
+### Session 2: [Day, e.g. Friday/Saturday] — [EXACT session name from library]
+- **What**: brief description
+- **Why**: specific reason based on my data
+- **Target watts**: specific range
+
+## 📅 Full Week Layout
+- **MON**: [session or rest]
+- **TUE**: [session]
+- **WED**: [Z2 ride duration in min]
+- **THU**: [rest or recovery]
+- **FRI**: [session]
+- **SAT**: [Z2 long ride duration]
+- **SUN**: [Z2 or rest]
+
+## 📊 Week Totals
+- Estimated TSS: [number]
+- Hard sessions: 2
+- Z2 hours: [number]
+
+Be DIRECT. Use my real numbers. Reference the session library by exact name.`;
+
+  // Hide welcome screen
+  const welcome = document.getElementById('chat-welcome');
+  if (welcome) welcome.remove();
+  
+  // Show user-friendly message in UI
+  addChatMsg('user', displayMsg);
+  // But send the detailed prompt to Claude
+  chatHistory.push({ role: 'user', content: fullPrompt });
+  
+  // Show typing indicator
+  const msgs = document.getElementById('chat-msgs');
+  const typing = document.createElement('div');
+  typing.id = 'typing';
+  typing.style.cssText = 'padding: 12px 16px; color: var(--txt2); font-size: 12px; display: flex; align-items: center; gap: 10px;';
+  typing.innerHTML = `
+    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: #fff;">AI</div>
+    <div><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> Analyzing your data and designing your week...</div>
+  `;
+  msgs.appendChild(typing);
+  msgs.scrollTop = msgs.scrollHeight;
+  
+  try {
+    const context = buildContext();
+    const res = await fetch('/claude', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('dash_token')
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 3000,
+        system: context,
+        messages: chatHistory
+      })
+    });
+    
+    typing.remove();
+    
+    if (!res.ok) {
+      const errText = await res.text();
+      addChatMsg('coach', `**Error ${res.status}**: ${errText.slice(0, 200)}\n\nMake sure ANTHROPIC_API_KEY is set on your Render server.`);
+      return;
+    }
+    
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'No response received.';
+    addChatMsg('coach', reply);
+    chatHistory.push({ role: 'assistant', content: reply });
+  } catch (e) {
+    document.getElementById('typing')?.remove();
+    addChatMsg('coach', `**Error**: ${e.message}`);
+  }
+}
+
+function clearChat() {
+  chatHistory = [];
+  document.getElementById('chat-msgs').innerHTML = `
+    <div id="chat-welcome" style="padding: 20px;">
+      <div style="font-size: 14px; color: var(--txt); margin-bottom: 16px; line-height: 1.6;">
+        Chat cleared. Ask me anything about your training.
+      </div>
+    </div>
+  `;
+}
+
+document.getElementById('chat-input')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendChat();
+});
+
+// ════════════════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════════════════
+
+buildWeekGrid();
+
+if (localStorage.getItem('dash_token')) {
+  hideLogin();
+  loadAll();
+} else {
+  showLogin();
+}
+</script>
+</body>
+</html>
