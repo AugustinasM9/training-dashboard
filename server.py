@@ -123,6 +123,40 @@ def proxy_claude(body_data):
     except Exception as e:
         return 500, json.dumps({'error': str(e)})
 
+def diagnose_icu():
+    """Test intervals.icu connection with multiple auth formats"""
+    results = {
+        'icu_id': ICU_ID,
+        'icu_key_length': len(ICU_KEY),
+        'icu_key_preview': ICU_KEY[:6] + '...' if ICU_KEY else 'EMPTY',
+        'tests': []
+    }
+    
+    # Test 1: API_KEY:key format
+    creds1 = base64.b64encode(f"API_KEY:{ICU_KEY}".encode()).decode()
+    # Test 2: id:key format
+    creds2 = base64.b64encode(f"{ICU_ID}:{ICU_KEY}".encode()).decode()
+    # Test 3: empty:key
+    creds3 = base64.b64encode(f":{ICU_KEY}".encode()).decode()
+    
+    for label, creds in [('API_KEY:key', creds1), ('athlete_id:key', creds2), (':key (empty user)', creds3)]:
+        url = f"https://intervals.icu/api/v1/athlete/{ICU_ID}/profile"
+        req = urllib.request.Request(url)
+        req.add_header('Authorization', 'Basic ' + creds)
+        req.add_header('User-Agent', 'Mozilla/5.0')
+        req.add_header('Accept', 'application/json')
+        
+        try:
+            with urllib.request.urlopen(req, timeout=15) as response:
+                results['tests'].append({'format': label, 'status': response.status, 'result': 'SUCCESS'})
+        except urllib.error.HTTPError as e:
+            body = e.read().decode('utf-8', errors='replace')[:150]
+            results['tests'].append({'format': label, 'status': e.code, 'result': body})
+        except Exception as e:
+            results['tests'].append({'format': label, 'status': 0, 'result': str(e)})
+    
+    return results
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         print(f"[{self.address_string()}] {format % args}")
@@ -166,6 +200,14 @@ class Handler(BaseHTTPRequestHandler):
         
         if path == '/' or path == '/index.html':
             self.serve_file('dashboard.html')
+            return
+        
+        # Diagnostic endpoint - test intervals.icu auth
+        if path == '/diagnose':
+            if not check_auth(self.headers):
+                self.send_json(401, {'error': 'Unauthorized'})
+                return
+            self.send_json(200, diagnose_icu())
             return
         
         # FIT file download: /fit/{activity_id}

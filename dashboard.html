@@ -262,7 +262,7 @@ body {
   <!-- DASHBOARD TAB -->
   <div class="tab active" id="tab-dash">
     <div id="debug-panel" style="background: #1a1a1f; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--txt2); max-height: 150px; overflow-y: auto;">
-      <div style="color: var(--txt); margin-bottom: 6px; font-weight: 600;">DEBUG LOG <span style="float: right; cursor: pointer; color: var(--txt3);" onclick="document.getElementById('debug-panel').style.display='none'">[hide]</span></div>
+      <div style="color: var(--txt); margin-bottom: 6px; font-weight: 600;">DEBUG LOG <span style="float: right;"><button onclick="testConnection()" style="background: var(--red); color: #fff; border: none; padding: 2px 8px; font-size: 10px; border-radius: 3px; cursor: pointer; margin-right: 8px;">TEST AUTH</button><span style="cursor: pointer; color: var(--txt3);" onclick="document.getElementById('debug-panel').style.display='none'">[hide]</span></span></div>
       <div id="debug-log">Initializing...</div>
     </div>
     <div class="metrics-grid">
@@ -756,6 +756,35 @@ function debugLog(msg, color) {
   console.log(`[${time}] ${msg}`);
 }
 
+async function testConnection() {
+  debugLog('🔍 Running auth diagnostic...', 'var(--blue)');
+  try {
+    const token = localStorage.getItem('dash_token') || '';
+    const res = await fetch('/diagnose', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    
+    debugLog(`📋 ICU_ID: ${data.icu_id}`, 'var(--txt)');
+    debugLog(`📋 ICU_KEY: ${data.icu_key_preview} (${data.icu_key_length} chars)`, 'var(--txt)');
+    
+    data.tests.forEach(t => {
+      const color = t.result === 'SUCCESS' ? 'var(--green)' : 'var(--red)';
+      const icon = t.result === 'SUCCESS' ? '✓' : '✗';
+      debugLog(`${icon} ${t.format}: ${t.status} - ${t.result.slice(0, 80)}`, color);
+    });
+    
+    const success = data.tests.find(t => t.result === 'SUCCESS');
+    if (success) {
+      alert(`✓ Auth working with format: ${success.format}\n\nIf metrics still don't load, the issue may be elsewhere.`);
+    } else {
+      alert(`✗ ALL auth formats failed!\n\nYour intervals.icu API key is invalid or expired.\n\nGo to intervals.icu → Settings → Developer → check/regenerate API key, then update ICU_KEY on Render.`);
+    }
+  } catch (e) {
+    debugLog(`✗ Diagnostic failed: ${e.message}`, 'var(--red)');
+  }
+}
+
 function daysAgo(n) {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -809,7 +838,7 @@ async function loadPowerCurve() {
   
   try {
     // intervals.icu uses /power-curves (plural) with a curves param
-    const data = await api('GET', '/power-curves?curves=42d');
+    const data = await api('GET', '/power-curves?curves=42d&type=Ride');
     let curve = null;
     if (data) {
       // Response format: { "42d": [array] } OR { curves: [{id, data}] }
