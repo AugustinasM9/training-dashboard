@@ -17,9 +17,9 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 
 PORT = int(os.environ.get('PORT', 10000))
-PASSWORD = os.environ.get('DASH_PASSWORD', 'trainer2026')
-ICU_ID = os.environ.get('ICU_ID', 'i222534')
-ICU_KEY = os.environ.get('ICU_KEY', '6rrza8s3bs7l08hjbvpiqy3a9')
+PASSWORD = os.environ.get('DASH_PASSWORD') or os.environ.get('DASHBOARD_PASSWORD') or 'trainer2026'
+ICU_ID = os.environ.get('ICU_ID') or os.environ.get('ATHLETE_ID') or 'i222534'
+ICU_KEY = os.environ.get('ICU_KEY') or os.environ.get('ICU_API_KEY') or '6rrza8s3bs7l08hjbvpiqy3a9'
 ANTHROPIC_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
 TOKENS = set()
